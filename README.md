@@ -1,1 +1,0 @@
-# crud_supabase_next

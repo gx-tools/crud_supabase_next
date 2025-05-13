@@ -2,13 +2,13 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Toaster } from "../components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TaskFlow - Modern Todo App",
-  description: "A beautiful and intuitive todo app built with Next.js",
+  title: "Todo App",
+  description: "A simple todo app built with Next.js",
 }
 
 export default function RootLayout({
@@ -19,8 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
