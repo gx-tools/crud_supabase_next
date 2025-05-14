@@ -3,3 +3,8 @@ export enum AuthRouteConstants {
   SIGNUP = "/auth/signup",
   HOME = "/",
 }
+
+export enum SupaBaseTableConstants {
+  TASKS = "tasks",
+}
+
