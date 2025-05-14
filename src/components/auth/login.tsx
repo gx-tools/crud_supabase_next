@@ -7,21 +7,17 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { motion } from "framer-motion"
-
-export default function SignupPage() {
-  const [name, setName] = useState("")
+import { AuthRouteConstants } from "@/helpers/string_const"
+import { signIn } from "@/utils/auth"
+export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  console.log("::: Login Component :::");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password !== confirmPassword) {
-      // TODO: handle error for password mismatch
-      return
-    }
-    // TODO: Integrate signup logic
-    console.log({ name, email, password })
+    await signIn({ email, password });
   }
 
   return (
@@ -32,24 +28,10 @@ export default function SignupPage() {
             <div className="absolute right-4 top-4">
               <ThemeToggle />
             </div>
-            <CardTitle className="text-2xl font-bold text-center text-primary">Sign Up</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-primary">Login</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block mb-1 text-sm font-medium text-foreground">
-                  Name
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="transition-colors duration-200 focus:ring-primary focus:border-primary hover:border-secondary"
-                />
-              </div>
               <div>
                 <label htmlFor="email" className="block mb-1 text-sm font-medium text-foreground">
                   Email
@@ -78,28 +60,14 @@ export default function SignupPage() {
                   className="transition-colors duration-200 focus:ring-primary focus:border-primary hover:border-secondary"
                 />
               </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block mb-1 text-sm font-medium text-foreground">
-                  Confirm Password
-                </label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="transition-colors duration-200 focus:ring-primary focus:border-primary hover:border-secondary"
-                />
-              </div>
-              <Button type="submit" className="w-full transition-transform transition-colors duration-300 hover:scale-105 active:scale-95">Sign Up</Button>
+              <Button type="submit" className="w-full transition-transform transition-colors duration-300 hover:scale-105 active:scale-95">Sign In</Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            <p>Already have an account? <Link href="/login" className="text-primary hover:underline hover:underline-offset-2 transition-colors duration-200">Log in</Link></p>
+            <p>Don't have an account? <Link href={AuthRouteConstants.SIGNUP} className="text-primary hover:underline hover:underline-offset-2 transition-colors duration-200">Sign up</Link></p>
           </CardFooter>
         </Card>
       </motion.div>
     </main>
   )
-} 
+}
