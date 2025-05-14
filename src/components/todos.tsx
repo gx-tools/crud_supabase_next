@@ -17,7 +17,16 @@ export default function TodoApp() {
   const [newTodo, setNewTodo] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   console.log("::: Todos :::", todos);
-  
+
+  useEffect(() => {
+    const fetchTodos = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
+      if (error) throw error;
+      setTodos(data);       
+    }
+    fetchTodos();
+  }, []);
 
   // Focus input on mount
   useEffect(() => {
@@ -51,13 +60,36 @@ export default function TodoApp() {
     }
   }
 
-  const toggleTodo = (id: number) => {
+  const toggleTodo = async (id: number) => {
+
+    console.log("::: Toggle Todo :::", id);
+
+    const supabase = createClient();
+    const { error, data } = await supabase.from(SupaBaseTableConstants.TASKS).update({
+      completed: !todos.find((todo) => todo.id === id)?.completed
+    }).eq(SupaBaseTableConstants.ID, id);
+
+    console.log("::: Toggle Todo Data :::", data);
+    
+
     setTodos(
       todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
     )
   }
 
-  const deleteTodo = (id: number) => {
+  const deleteTodo = async (id: number) => {
+
+    console.log("::: Delete Todo :::", id);
+    
+
+    const supabase = createClient();
+    const { error ,data} = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
+
+    console.log("::: Delete Todo Data :::", data);
+    
+    console.log("::: Delete Todo Error :::", error);
+
+    if (error) throw error;
     setTodos(todos.filter((todo) => todo.id !== id))
   }
 

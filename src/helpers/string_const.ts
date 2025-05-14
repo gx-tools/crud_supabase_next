@@ -6,5 +6,16 @@ export enum AuthRouteConstants {
 
 export enum SupaBaseTableConstants {
   TASKS = "tasks",
+  ID = "id",
+  COMPLETED = "completed",
+  CREATED_BY = "created_by",
+}
+
+
+export enum SupaBaseQueryConstants {
+  EQUAL = "eq",
+  NOT = "not",
+  AND = "and",
+  OR = "or",
 }
 
