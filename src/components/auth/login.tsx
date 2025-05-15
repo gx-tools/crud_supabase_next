@@ -9,15 +9,40 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { motion } from "framer-motion"
 import { AuthRouteConstants } from "@/helpers/string_const"
 import { signIn } from "@/utils/auth"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-
-  console.log("::: Login Component :::");
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await signIn({ email, password });
+    if (!email || !password) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      const { data, error } = await signIn({ email, password })
+      
+      if (error) {
+        toast.error(error.message || "Failed to login. Please check your credentials.")
+        return
+      }
+
+      toast.success("Logged in successfully!")
+      router.push(AuthRouteConstants.HOME)
+    } catch (error) {
+      console.error("Login error:", error)
+      toast.error("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -43,6 +68,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                   className="transition-colors duration-200 focus:ring-primary focus:border-primary hover:border-secondary"
                 />
               </div>
@@ -57,10 +83,24 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                   className="transition-colors duration-200 focus:ring-primary focus:border-primary hover:border-secondary"
                 />
               </div>
-              <Button type="submit" className="w-full transition-transform transition-colors duration-300 hover:scale-105 active:scale-95">Sign In</Button>
+              <Button 
+                type="submit" 
+                className="w-full transition-transform transition-colors duration-300 hover:scale-105 active:scale-95"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">

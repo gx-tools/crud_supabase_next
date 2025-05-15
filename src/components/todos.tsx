@@ -5,26 +5,45 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Trash2, Plus, CheckCircle2 } from "lucide-react"
+import { Trash2, Plus, CheckCircle2, Edit, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
 import type { Tasks, NewTask } from "@/types/supabase"
 import { createClient } from "@/utils/supabase/client"
-import { SupaBaseTableConstants } from "@/helpers/string_const"
+import { AuthRouteConstants, SupaBaseTableConstants } from "@/helpers/string_const"
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function TodoApp() {
   const [todos, setTodos] = useState<Tasks[]>([])
   const [newTodo, setNewTodo] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
-  console.log("::: Todos :::", todos);
+  const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
+  const router = useRouter();
 
-  useEffect(() => {
-    const fetchTodos = async () => {
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeletingId, setIsDeletingId] = useState<number | null>(null)
+  const [isTogglingId, setIsTogglingId] = useState<number | null>(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const fetchTodos = async () => {
+    try {
+      setIsLoading(true)
       const supabase = createClient();
       const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
       if (error) throw error;
-      setTodos(data);       
+      setTodos(data);
+    } catch (error) {
+      console.error("Error fetching todos:", error);
+      toast.error("Failed to fetch todos. Please try again.");
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchTodos();
   }, []);
 
@@ -36,61 +55,96 @@ export default function TodoApp() {
   }, [])
 
   const addTodo = async () => {
-    console.log("::: Add Todo :::");
     if (newTodo.trim() === "") return;
     try {
+      setIsSubmitting(true)
       const supabase = createClient();
-      const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
-        tasks: newTodo
-      }).single();
+      if (editingTodoId) {
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
+          tasks: newTodo
+        }).eq(SupaBaseTableConstants.ID, editingTodoId);
 
+        if (error) throw error;
+        setEditingTodoId(null);
+        toast.success("Todo updated successfully!");
+      } else {
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
+          tasks: newTodo
+        }).single();
 
-      console.log({ data, error });
-
-
-      if (error) throw error;
-      
-
+        if (error) throw error;
+        toast.success("Todo added successfully!");
+      }
+      await fetchTodos();
       setNewTodo("");
       if (inputRef.current) {
-        inputRef.current.focus()
+        inputRef.current.focus();
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error adding/editing todo:", error);
+      toast.error(editingTodoId ? "Failed to update todo" : "Failed to add todo");
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
+  const handleEditTodo = (todo: Tasks) => {
+    setNewTodo(todo.tasks);
+    setEditingTodoId(todo.id);
+  }
+
   const toggleTodo = async (id: number) => {
+    try {
+      setIsTogglingId(id)
+      const supabase = createClient();
+      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
+        completed: !todos.find((todo) => todo.id === id)?.completed
+      }).eq(SupaBaseTableConstants.ID, id);
 
-    console.log("::: Toggle Todo :::", id);
-
-    const supabase = createClient();
-    const { error, data } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-      completed: !todos.find((todo) => todo.id === id)?.completed
-    }).eq(SupaBaseTableConstants.ID, id);
-
-    console.log("::: Toggle Todo Data :::", data);
-    
-
-    setTodos(
-      todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
-    )
+      if (error) throw error;
+      setTodos(
+        todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
+      )
+      toast.success("Todo status updated!");
+    } catch (error) {
+      console.error("Error toggling todo:", error);
+      toast.error("Failed to update todo status");
+    } finally {
+      setIsTogglingId(null)
+    }
   }
 
   const deleteTodo = async (id: number) => {
+    try {
+      setIsDeletingId(id)
+      const supabase = createClient();
+      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
 
-    console.log("::: Delete Todo :::", id);
-    
+      if (error) throw error;
+      setTodos(todos.filter((todo) => todo.id !== id))
+      toast.success("Todo deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+      toast.error("Failed to delete todo");
+    } finally {
+      setIsDeletingId(null)
+    }
+  }
 
-    const supabase = createClient();
-    const { error ,data} = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
-
-    console.log("::: Delete Todo Data :::", data);
-    
-    console.log("::: Delete Todo Error :::", error);
-
-    if (error) throw error;
-    setTodos(todos.filter((todo) => todo.id !== id))
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true)
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.push(AuthRouteConstants.LOGIN);
+      toast.success("Logged out successfully!");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -114,20 +168,47 @@ export default function TodoApp() {
               value={newTodo}
               onChange={(e) => setNewTodo(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !isSubmitting) {
                   addTodo()
                 }
               }}
+              disabled={isSubmitting}
               className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
             />
-            <Button onClick={addTodo} className="transition-all duration-200 hover:scale-105">
-              <Plus className="h-5 w-5 mr-1" />
-              Add
+            <Button 
+              onClick={addTodo} 
+              disabled={isSubmitting}
+              className="transition-all duration-200 hover:scale-105"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {editingTodoId ? "Edit" : "Add"}
+                  <Plus className="h-5 w-5 ml-1" />
+                </>
+              )}
             </Button>
           </div>
 
+          <Button 
+            onClick={handleLogout} 
+            disabled={isLoggingOut}
+            className="mb-4 transition-all duration-200 hover:scale-105 w-full"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Logout"
+            )}
+          </Button>
+
           <AnimatePresence>
-            {todos.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : todos.length === 0 ? (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -152,6 +233,7 @@ export default function TodoApp() {
                           checked={todo.completed}
                           onCheckedChange={() => toggleTodo(todo.id)}
                           id={`todo-${todo.id}`}
+                          disabled={isTogglingId === todo.id}
                           className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                         />
                         <label
@@ -162,15 +244,33 @@ export default function TodoApp() {
                         >
                           {todo.tasks}
                         </label>
+                        {isTogglingId === todo.id && (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditTodo(todo)}
+                          disabled={isSubmitting}
+                          aria-label="Edit todo"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteTodo(todo.id)}
+                        disabled={isDeletingId === todo.id}
                         aria-label="Delete todo"
                         className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {isDeletingId === todo.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </motion.div>
                   ))}
