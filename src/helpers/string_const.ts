@@ -9,6 +9,7 @@ export enum SupaBaseTableConstants {
   ID = "id",
   COMPLETED = "completed",
   CREATED_BY = "created_by",
+  USERS = "users",
 }
 
 

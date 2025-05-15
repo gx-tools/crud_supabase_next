@@ -43,6 +43,17 @@ export default function TodoApp() {
     }
   }
 
+  const fetchUser = async () => {
+
+    console.log("::: fetchUser ::: ");
+    
+    const supabase = createClient();
+
+    const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*");
+    console.log("::: data ::: ", data);
+  }
+  
+  // fetchUser();
   useEffect(() => {
     fetchTodos();
   }, []);
