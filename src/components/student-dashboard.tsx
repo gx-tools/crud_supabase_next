@@ -10,16 +10,19 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
 import type { Tasks, NewTask } from "@/types/supabase"
 import { createClient } from "@/utils/supabase/client"
-import { AuthRouteConstants, RouteConstants, SupaBaseTableConstants } from "@/helpers/string_const"
+import { AuthRouteConstants, SupaBaseTableConstants, SupaBaseRoleConstants } from "@/helpers/string_const"
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Link from "next/link";
-export default function TodoApp() {
+
+export default function StudentDashboard() {
   const [todos, setTodos] = useState<Tasks[]>([])
   const [newTodo, setNewTodo] = useState("")
+  const [userRole, setUserRole] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
   const router = useRouter();
+  console.log("::: StudentDashboard ::: ");
+  
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true)
@@ -43,22 +46,24 @@ export default function TodoApp() {
     }
   }
 
-  
-
   const fetchUser = async () => {
-
-    console.log("::: fetchUser ::: ");
-    
-    const supabase = createClient();
-
-    const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*");
-    console.log("::: data ::: ", data);
-    
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*").single();
+      if (error) throw error;
+      setUserRole(data?.role);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      toast.error("Failed to fetch user data");
+    }
   }
   
-  // fetchUser();
   useEffect(() => {
     fetchTodos();
+  }, []);
+
+  useEffect(() => {
+    fetchUser();
   }, []);
 
   // Focus input on mount
@@ -68,7 +73,15 @@ export default function TodoApp() {
     }
   }, [])
 
+  const hasWritePermission = () => {
+    return userRole === SupaBaseRoleConstants.ADMIN || userRole === SupaBaseRoleConstants.INSTRUCTOR;
+  }
+
   const addTodo = async () => {
+    if (!hasWritePermission()) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
     if (newTodo.trim() === "") return;
     try {
       setIsSubmitting(true)
@@ -103,11 +116,19 @@ export default function TodoApp() {
   }
 
   const handleEditTodo = (todo: Tasks) => {
+    if (!hasWritePermission()) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
     setNewTodo(todo.tasks);
     setEditingTodoId(todo.id);
   }
 
   const toggleTodo = async (id: number) => {
+    if (!hasWritePermission()) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
     try {
       setIsTogglingId(id)
       const supabase = createClient();
@@ -129,6 +150,10 @@ export default function TodoApp() {
   }
 
   const deleteTodo = async (id: number) => {
+    if (!hasWritePermission()) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
     try {
       setIsDeletingId(id)
       const supabase = createClient();
@@ -163,64 +188,55 @@ export default function TodoApp() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-24 bg-background transition-colors duration-300">
+      <h1 className="text-4xl font-bold mb-4">Testing</h1>
       <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
         <CardHeader className="pb-3 relative">
           <div className="absolute right-4 top-4">
-          <Link href={RouteConstants.STUDENT_DASHBOARD}>
-      <Button variant="ghost" size="sm" className="text-sm">
-        Testing
-      </Button>
-    </Link> 
             <ThemeToggle />
           </div>
           <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2 pt-2">
             <CheckCircle2 className="h-7 w-7 text-primary" />
             Todo App
           </CardTitle>
+          {userRole && (
+            <p className="text-center text-sm text-muted-foreground">
+              Logged in as: {userRole}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-6">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Add a new task..."
-              value={newTodo}
-              onChange={(e) => setNewTodo(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isSubmitting) {
-                  addTodo()
-                }
-              }}
-              disabled={isSubmitting}
-              className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
-            />
-            <Button 
-              onClick={addTodo} 
-              disabled={isSubmitting}
-              className="transition-all duration-200 hover:scale-105"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  {editingTodoId ? "Edit" : "Add"}
-                  <Plus className="h-5 w-5 ml-1" />
-                </>
-              )}
-            </Button>
-          </div>
-
-          <Button 
-            onClick={handleLogout} 
-            disabled={isLoggingOut}
-            className="mb-4 transition-all duration-200 hover:scale-105 w-full"
-          >
-            {isLoggingOut ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Logout"
-            )}
-          </Button>
+          {hasWritePermission() && (
+            <div className="flex gap-2 mb-6">
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="Add a new task..."
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isSubmitting) {
+                    addTodo()
+                  }
+                }}
+                disabled={isSubmitting}
+                className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
+              />
+              <Button 
+                onClick={addTodo} 
+                disabled={isSubmitting}
+                className="transition-all duration-200 hover:scale-105"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {editingTodoId ? "Edit" : "Add"}
+                    <Plus className="h-5 w-5 ml-1" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
 
           <AnimatePresence>
             {isLoading ? (
@@ -233,7 +249,7 @@ export default function TodoApp() {
                 animate={{ opacity: 1 }}
                 className="text-center text-muted-foreground py-8"
               >
-                No todos yet. Add one above!
+                No todos yet. {hasWritePermission() ? "Add one above!" : "Check back later for updates."}
               </motion.p>
             ) : (
               <div className="space-y-3">
@@ -248,13 +264,17 @@ export default function TodoApp() {
                       className="flex items-center justify-between p-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 group dark:bg-muted/10"
                     >
                       <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={todo.completed}
-                          onCheckedChange={() => toggleTodo(todo.id)}
-                          id={`todo-${todo.id}`}
-                          disabled={isTogglingId === todo.id}
-                          className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
+                        {hasWritePermission() ? (
+                          <Checkbox
+                            checked={todo.completed}
+                            onCheckedChange={() => toggleTodo(todo.id)}
+                            id={`todo-${todo.id}`}
+                            disabled={isTogglingId === todo.id}
+                            className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          />
+                        ) : (
+                          <div className={`w-4 h-4 rounded-sm border ${todo.completed ? 'bg-primary border-primary' : 'border-input'}`} />
+                        )}
                         <label
                           htmlFor={`todo-${todo.id}`}
                           className={`transition-all duration-300 ${
@@ -266,31 +286,35 @@ export default function TodoApp() {
                         {isTogglingId === todo.id && (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         )}
+                        {hasWritePermission() && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditTodo(todo)}
+                            disabled={isSubmitting}
+                            aria-label="Edit todo"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {hasWritePermission() && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEditTodo(todo)}
-                          disabled={isSubmitting}
-                          aria-label="Edit todo"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => deleteTodo(todo.id)}
+                          disabled={isDeletingId === todo.id}
+                          aria-label="Delete todo"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Edit className="h-4 w-4" />
+                          {isDeletingId === todo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteTodo(todo.id)}
-                        disabled={isDeletingId === todo.id}
-                        aria-label="Delete todo"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        {isDeletingId === todo.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -299,7 +323,11 @@ export default function TodoApp() {
           </AnimatePresence>
         </CardContent>
         <CardFooter className="flex justify-center text-sm text-muted-foreground pt-0 pb-4">
-          <p>Click the {todos.length > 0 ? "checkbox to mark as complete" : "plus button to add a todo"}</p>
+          {hasWritePermission() ? (
+            <p>Click the {todos.length > 0 ? "checkbox to mark as complete" : "plus button to add a todo"}</p>
+          ) : (
+            <p>You are in view-only mode</p>
+          )}
         </CardFooter>
       </Card>
     </main>
