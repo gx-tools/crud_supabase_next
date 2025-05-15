@@ -51,6 +51,8 @@ export default function TodoApp() {
 
     const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*");
     console.log("::: data ::: ", data);
+    console.log("::: error ::: ", error);
+    
   }
   
   // fetchUser();
