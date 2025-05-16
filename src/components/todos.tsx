@@ -14,6 +14,11 @@ import { AuthRouteConstants, RouteConstants, SupaBaseTableConstants } from "@/he
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
+
+const courseLinks = [
+  { name: "Courses", path: RouteConstants.STUDENT_DASHBOARD },
+];
+
 export default function TodoApp() {
   const [todos, setTodos] = useState<Tasks[]>([])
   const [newTodo, setNewTodo] = useState("")
@@ -162,146 +167,159 @@ export default function TodoApp() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-24 bg-background transition-colors duration-300">
-      <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
-        <CardHeader className="pb-3 relative">
-          <div className="absolute right-4 top-4">
-          <Link href={RouteConstants.STUDENT_DASHBOARD}>
-      <Button variant="ghost" size="sm" className="text-sm">
-        Testing
-      </Button>
-    </Link> 
-            <ThemeToggle />
-          </div>
-          <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2 pt-2">
-            <CheckCircle2 className="h-7 w-7 text-primary" />
-            Todo App
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 mb-6">
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="Add a new task..."
-              value={newTodo}
-              onChange={(e) => setNewTodo(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isSubmitting) {
-                  addTodo()
-                }
-              }}
-              disabled={isSubmitting}
-              className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
-            />
+    <>
+      <nav className="bg-gray-800 p-4">
+        <ul className="flex space-x-4">
+          {courseLinks.map((link) => (
+            <li key={link.name}>
+              <Link href={link.path} className="text-white hover:underline">
+                {link.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-24 bg-background transition-colors duration-300">
+        <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
+          <CardHeader className="pb-3 relative">
+            <div className="absolute right-4 top-4">
+            {/* <Link href={RouteConstants.STUDENT_DASHBOARD}>
+        <Button variant="ghost" size="sm" className="text-sm">
+          Testing
+        </Button>
+      </Link>  */}
+              <ThemeToggle />
+            </div>
+            <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2 pt-2">
+              <CheckCircle2 className="h-7 w-7 text-primary" />
+              Todo App
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-6">
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="Add a new task..."
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isSubmitting) {
+                    addTodo()
+                  }
+                }}
+                disabled={isSubmitting}
+                className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
+              />
+              <Button 
+                onClick={addTodo} 
+                disabled={isSubmitting}
+                className="transition-all duration-200 hover:scale-105"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {editingTodoId ? "Edit" : "Add"}
+                    <Plus className="h-5 w-5 ml-1" />
+                  </>
+                )}
+              </Button>
+            </div>
+
             <Button 
-              onClick={addTodo} 
-              disabled={isSubmitting}
-              className="transition-all duration-200 hover:scale-105"
+              onClick={handleLogout} 
+              disabled={isLoggingOut}
+              className="mb-4 transition-all duration-200 hover:scale-105 w-full"
             >
-              {isSubmitting ? (
+              {isLoggingOut ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  {editingTodoId ? "Edit" : "Add"}
-                  <Plus className="h-5 w-5 ml-1" />
-                </>
+                "Logout"
               )}
             </Button>
-          </div>
 
-          <Button 
-            onClick={handleLogout} 
-            disabled={isLoggingOut}
-            className="mb-4 transition-all duration-200 hover:scale-105 w-full"
-          >
-            {isLoggingOut ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Logout"
-            )}
-          </Button>
-
-          <AnimatePresence>
-            {isLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : todos.length === 0 ? (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center text-muted-foreground py-8"
-              >
-                No todos yet. Add one above!
-              </motion.p>
-            ) : (
-              <div className="space-y-3">
-                <AnimatePresence>
-                  {todos.map((todo) => (
-                    <motion.div
-                      key={todo.id}
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -100 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center justify-between p-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 group dark:bg-muted/10"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={todo.completed}
-                          onCheckedChange={() => toggleTodo(todo.id)}
-                          id={`todo-${todo.id}`}
-                          disabled={isTogglingId === todo.id}
-                          className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                        <label
-                          htmlFor={`todo-${todo.id}`}
-                          className={`transition-all duration-300 ${
-                            todo.completed ? "line-through text-muted-foreground" : "text-foreground"
-                          }`}
-                        >
-                          {todo.tasks}
-                        </label>
-                        {isTogglingId === todo.id && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
+            <AnimatePresence>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : todos.length === 0 ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-muted-foreground py-8"
+                >
+                  No todos yet. Add one above!
+                </motion.p>
+              ) : (
+                <div className="space-y-3">
+                  <AnimatePresence>
+                    {todos.map((todo) => (
+                      <motion.div
+                        key={todo.id}
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -100 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center justify-between p-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 group dark:bg-muted/10"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={todo.completed}
+                            onCheckedChange={() => toggleTodo(todo.id)}
+                            id={`todo-${todo.id}`}
+                            disabled={isTogglingId === todo.id}
+                            className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          />
+                          <label
+                            htmlFor={`todo-${todo.id}`}
+                            className={`transition-all duration-300 ${
+                              todo.completed ? "line-through text-muted-foreground" : "text-foreground"
+                            }`}
+                          >
+                            {todo.tasks}
+                          </label>
+                          {isTogglingId === todo.id && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditTodo(todo)}
+                            disabled={isSubmitting}
+                            aria-label="Edit todo"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEditTodo(todo)}
-                          disabled={isSubmitting}
-                          aria-label="Edit todo"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => deleteTodo(todo.id)}
+                          disabled={isDeletingId === todo.id}
+                          aria-label="Delete todo"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Edit className="h-4 w-4" />
+                          {isDeletingId === todo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteTodo(todo.id)}
-                        disabled={isDeletingId === todo.id}
-                        aria-label="Delete todo"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        {isDeletingId === todo.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-        <CardFooter className="flex justify-center text-sm text-muted-foreground pt-0 pb-4">
-          <p>Click the {todos.length > 0 ? "checkbox to mark as complete" : "plus button to add a todo"}</p>
-        </CardFooter>
-      </Card>
-    </main>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </AnimatePresence>
+          </CardContent>
+          <CardFooter className="flex justify-center text-sm text-muted-foreground pt-0 pb-4">
+            <p>Click the {todos.length > 0 ? "checkbox to mark as complete" : "plus button to add a todo"}</p>
+          </CardFooter>
+        </Card>
+      </main>
+    </>
   )
 }
