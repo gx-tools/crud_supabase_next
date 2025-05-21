@@ -90,7 +90,7 @@ export default function TodoApp() {
         // Use Supabase direct access
         const supabase = createClient();
         if (editingTodoId) {
-          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
+          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
             tasks: newTodo
           }).eq(SupaBaseTableConstants.ID, editingTodoId);
 
@@ -98,7 +98,7 @@ export default function TodoApp() {
           setEditingTodoId(null);
           toast.success("Todo updated successfully!");
         } else {
-          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).insert({
+          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
             tasks: newTodo
           }).single();
 

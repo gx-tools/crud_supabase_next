@@ -27,7 +27,7 @@ A NestJS backend for a Todo application using Supabase for authentication and da
 
 ## Features
 
-- User authentication (signup/login) via Supabase
+- User authentication (signup/login/logout) via Supabase
 - JWT stored in HTTP-only cookies for secure authentication
 - Task CRUD operations with user-specific data isolation
 - REST API with proper validation and error handling
@@ -99,6 +99,7 @@ npm run start:prod
 
 - `POST /api/auth/signup` - Register a new user
 - `POST /api/auth/login` - Login and get JWT cookie
+- `POST /api/auth/logout` - Logout and clear JWT cookie
 
 ### Tasks (Protected by Auth)
 

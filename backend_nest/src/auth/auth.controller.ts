@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, InternalServerErrorException } from '@nestjs/common';
+import { Body, Controller, Post, Res, InternalServerErrorException, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -32,5 +32,17 @@ export class AuthController {
     });
 
     res.json(successResponse(response.message));
+  }
+
+  @Post(ROUTES.LOGOUT)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Res() res: Response): Promise<void> {
+    const response = await this.authService.logout();
+    res.clearCookie(COOKIE.ACCESS_TOKEN, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+    res.json(response);
   }
 }
