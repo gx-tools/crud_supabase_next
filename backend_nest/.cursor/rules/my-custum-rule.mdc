@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+Define all hardcoded strings (e.g., messages, table names, error keys, Supabase policies) inside a central string-const.ts file.
+
+
+Use categorized enums or objects for structure. 1. Environment Variables
+
+DO NOT hardcode any credentials, URLs, or magic values.
+
+Use process.env to access variables.
+
+Document all required variables in .env.example.
+
+
+If anything is unclear or missing, ask the maintainer (you).
+
+
+
+
