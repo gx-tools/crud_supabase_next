@@ -21,28 +21,92 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# NestJS + Supabase Todo App Backend
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+A NestJS backend for a Todo application using Supabase for authentication and database storage.
 
-## Project setup
+## Features
 
-```bash
-$ npm install
-```
+- User authentication (signup/login) via Supabase
+- JWT stored in HTTP-only cookies for secure authentication
+- Task CRUD operations with user-specific data isolation
+- REST API with proper validation and error handling
 
-## Compile and run the project
+## Prerequisites
+
+- Node.js (v14+)
+- npm or yarn
+- Supabase account and project
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the root directory with the following variables:
+   ```
+   SUPABASE_URL=your-supabase-url
+   SUPABASE_ANON_KEY=your-supabase-anon-key
+   PORT=3500
+   ```
+4. Create a `tasks` table in your Supabase database with the following schema:
+   - `id` (UUID, primary key)
+   - `created_by` (UUID, references auth.users)
+   - `title` (text, required)
+   - `completed` (boolean, default: false)
+   - `created_at` (timestamp with timezone, default: now())
+
+5. Set up Row Level Security (RLS) on the `tasks` table:
+   ```sql
+   -- Enable RLS
+   alter table tasks enable row level security;
+
+   -- Create policy for users to see only their own tasks
+   create policy "Users can view their own tasks" on tasks
+     for select using (auth.uid() = created_by);
+
+   -- Create policy for users to insert their own tasks
+   create policy "Users can insert their own tasks" on tasks
+     for insert with check (auth.uid() = created_by);
+
+   -- Create policy for users to update their own tasks
+   create policy "Users can update their own tasks" on tasks
+     for update using (auth.uid() = created_by);
+
+   -- Create policy for users to delete their own tasks
+   create policy "Users can delete their own tasks" on tasks
+     for delete using (auth.uid() = created_by);
+   ```
+
+## Running the app
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/signup` - Register a new user
+- `POST /api/auth/login` - Login and get JWT cookie
+
+### Tasks (Protected by Auth)
+
+- `GET /api/tasks` - Get all tasks for the authenticated user
+- `POST /api/tasks` - Create a new task
+- `GET /api/tasks/:id` - Get a specific task
+- `PUT /api/tasks/:id` - Update a task
+- `DELETE /api/tasks/:id` - Delete a task
 
 ## Run tests
 

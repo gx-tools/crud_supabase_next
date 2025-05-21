@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { ENVS } from 'src/helpers/string-const';
+import { ENVS } from '../helpers/string-const';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {

@@ -5,6 +5,7 @@ export enum TABLES {
 export enum ENVS {
   SUPABASE_URL = 'SUPABASE_URL',
   SUPABASE_ANON_KEY = 'SUPABASE_ANON_KEY',
+  PORT = 'PORT',
 }
 
 export enum MESSAGES {
