@@ -5,26 +5,31 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Trash2, Plus, CheckCircle2, Edit, Loader2 } from "lucide-react"
+import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
-import type { Tasks, NewTask } from "@/types/supabase"
 import { createClient } from "@/utils/supabase/client"
 import { AuthRouteConstants, RouteConstants, SupaBaseTableConstants } from "@/helpers/string_const"
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import Link from "next/link";
+import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
+import Link from "next/link"
+import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/utils/tasks"
+import { apiLogout } from "@/utils/auth"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Task } from "@/types/supabase"
 
 const courseLinks = [
   { name: "Courses", path: RouteConstants.STUDENT_DASHBOARD },
 ];
 
 export default function TodoApp() {
-  const [todos, setTodos] = useState<Tasks[]>([])
+  const [todos, setTodos] = useState<Task[]>([])
   const [newTodo, setNewTodo] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
-  const router = useRouter();
+  const router = useRouter()
+  const [useApi, setUseApi] = useState(false)
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true)
@@ -36,10 +41,17 @@ export default function TodoApp() {
   const fetchTodos = async () => {
     try {
       setIsLoading(true)
-      const supabase = createClient();
-      const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
-      if (error) throw error;
-      setTodos(data);
+      if (useApi) {
+        // Use the API endpoint
+        const response = await fetchApiTasks();
+        setTodos(response.data || []);
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
+        if (error) throw error;
+        setTodos(data);
+      }
     } catch (error) {
       console.error("Error fetching todos:", error);
       toast.error("Failed to fetch todos. Please try again.");
@@ -48,23 +60,9 @@ export default function TodoApp() {
     }
   }
 
-  
-
-  const fetchUser = async () => {
-
-    console.log("::: fetchUser ::: ");
-    
-    const supabase = createClient();
-
-    const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*");
-    console.log("::: data ::: ", data);
-    
-  }
-  
-  // fetchUser();
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [useApi]);
 
   // Focus input on mount
   useEffect(() => {
@@ -77,23 +75,38 @@ export default function TodoApp() {
     if (newTodo.trim() === "") return;
     try {
       setIsSubmitting(true)
-      const supabase = createClient();
-      if (editingTodoId) {
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-          tasks: newTodo
-        }).eq(SupaBaseTableConstants.ID, editingTodoId);
-
-        if (error) throw error;
-        setEditingTodoId(null);
-        toast.success("Todo updated successfully!");
+      
+      if (useApi) {
+        // Use the API endpoint
+        if (editingTodoId) {
+          await updateApiTask(editingTodoId, { title: newTodo });
+          setEditingTodoId(null);
+          toast.success("Todo updated successfully!");
+        } else {
+          await createApiTask(newTodo);
+          toast.success("Todo added successfully!");
+        }
       } else {
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
-          tasks: newTodo
-        }).single();
+        // Use Supabase direct access
+        const supabase = createClient();
+        if (editingTodoId) {
+          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
+            tasks: newTodo
+          }).eq(SupaBaseTableConstants.ID, editingTodoId);
 
-        if (error) throw error;
-        toast.success("Todo added successfully!");
+          if (error) throw error;
+          setEditingTodoId(null);
+          toast.success("Todo updated successfully!");
+        } else {
+          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).insert({
+            tasks: newTodo
+          }).single();
+
+          if (error) throw error;
+          toast.success("Todo added successfully!");
+        }
       }
+      
       await fetchTodos();
       setNewTodo("");
       if (inputRef.current) {
@@ -107,20 +120,30 @@ export default function TodoApp() {
     }
   }
 
-  const handleEditTodo = (todo: Tasks) => {
-    setNewTodo(todo.tasks);
+  const handleEditTodo = (todo: Task) => {
+    setNewTodo(todo.title);
     setEditingTodoId(todo.id);
   }
 
   const toggleTodo = async (id: number) => {
     try {
       setIsTogglingId(id)
-      const supabase = createClient();
-      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-        completed: !todos.find((todo) => todo.id === id)?.completed
-      }).eq(SupaBaseTableConstants.ID, id);
+      const currentTodo = todos.find((todo) => todo.id === id);
+      if (!currentTodo) return;
+      
+      if (useApi) {
+        // Use the API endpoint
+        await updateApiTask(id, { completed: !currentTodo.completed });
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
+          completed: !currentTodo.completed
+        }).eq(SupaBaseTableConstants.ID, id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      
       setTodos(
         todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
       )
@@ -136,10 +159,17 @@ export default function TodoApp() {
   const deleteTodo = async (id: number) => {
     try {
       setIsDeletingId(id)
-      const supabase = createClient();
-      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
-
-      if (error) throw error;
+      
+      if (useApi) {
+        // Use the API endpoint
+        await deleteApiTask(id);
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
+        if (error) throw error;
+      }
+      
       setTodos(todos.filter((todo) => todo.id !== id))
       toast.success("Todo deleted successfully!");
     } catch (error) {
@@ -153,9 +183,17 @@ export default function TodoApp() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      if (useApi) {
+        // Use the API endpoint
+        await apiLogout();
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      }
+      
       router.push(AuthRouteConstants.LOGIN);
       toast.success("Logged out successfully!");
     } catch (error) {
@@ -183,17 +221,24 @@ export default function TodoApp() {
         <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
           <CardHeader className="pb-3 relative">
             <div className="absolute right-4 top-4">
-            {/* <Link href={RouteConstants.STUDENT_DASHBOARD}>
-        <Button variant="ghost" size="sm" className="text-sm">
-          Testing
-        </Button>
-      </Link>  */}
               <ThemeToggle />
             </div>
             <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2 pt-2">
               <CheckCircle2 className="h-7 w-7 text-primary" />
               Todo App
             </CardTitle>
+            <div className="flex items-center space-x-2 justify-center mt-2">
+              <div className="flex items-center space-x-2">
+                <Database className={`h-4 w-4 ${!useApi ? "text-primary" : "text-muted-foreground"}`} />
+                <Switch 
+                  id="api-toggle"
+                  checked={useApi}
+                  onCheckedChange={setUseApi}
+                />
+                <Server className={`h-4 w-4 ${useApi ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <Label htmlFor="api-toggle">{useApi ? "Using API" : "Using Supabase"}</Label>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2 mb-6">
@@ -278,7 +323,7 @@ export default function TodoApp() {
                               todo.completed ? "line-through text-muted-foreground" : "text-foreground"
                             }`}
                           >
-                            {todo.tasks}
+                            {todo.title}
                           </label>
                           {isTogglingId === todo.id && (
                             <Loader2 className="h-4 w-4 animate-spin" />

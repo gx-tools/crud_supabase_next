@@ -8,15 +8,18 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { motion } from "framer-motion"
 import { AuthRouteConstants } from "@/helpers/string_const"
-import { signUp } from "@/utils/auth"
+import { signUp, apiSignUp } from "@/utils/auth"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { Loader2, Server, Database } from "lucide-react"
+import { toast } from "react-toastify"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export default function Signup() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [useApi, setUseApi] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,14 +31,22 @@ export default function Signup() {
 
     try {
       setIsLoading(true)
-      const { data, error } = await signUp({ email, password })
+      
+      if (useApi) {
+        // Use the NestJS API endpoint
+        const response = await apiSignUp({ email, password })
+      } else {
+        // Use Supabase direct authentication
+        const { data, error } = await signUp({ email, password })
 
-      if (error) {
-        toast.error(error.message || "Failed to create account. Please try again.")
-        return
+        if (error) {
+          toast.error(error.message || "Failed to create account. Please try again.")
+          return
+        }
+
       }
-
       toast.success("Account created successfully! Please check your email to verify your account.")
+      console.log("::: before push :::");
       router.push(AuthRouteConstants.LOGIN)
     } catch (error) {
       console.error("Signup error:", error)
@@ -54,6 +65,18 @@ export default function Signup() {
               <ThemeToggle />
             </div>
             <CardTitle className="text-2xl font-bold text-center text-primary">Sign Up</CardTitle>
+            <div className="flex items-center space-x-2 justify-center mt-2">
+              <div className="flex items-center space-x-2">
+                <Database className={`h-4 w-4 ${!useApi ? "text-primary" : "text-muted-foreground"}`} />
+                <Switch 
+                  id="api-toggle"
+                  checked={useApi}
+                  onCheckedChange={setUseApi}
+                />
+                <Server className={`h-4 w-4 ${useApi ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <Label htmlFor="api-toggle" className="text-xs">{useApi ? "Using API" : "Using Supabase"}</Label>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -157,9 +157,7 @@ export const handleResponse = (response: any) => {
 }
 
 export const postRequest = async (url: string, data = {}) => {
-
     const response = await axiosInstance.post(url, data);
-
     handleSuccess(response.data);
     return handleResponse(response);
 };
@@ -176,12 +174,17 @@ export const patchRequest = async (url: string, data = {}) => {
 
 export const putRequest = async (url: string, data = {}) => {
   const response = await axiosInstance.put(url, data);
-
+  handleSuccess(response.data);
   return handleResponse(response);
 };
 
 export const getRequest = async (url: string) => {
   const response = await axiosInstance.get(url,{withCredentials: true});
+  return handleResponse(response);
+}
 
+export const deleteRequest = async (url: string) => {
+  const response = await axiosInstance.delete(url, {withCredentials: true});
+  handleSuccess(response.data);
   return handleResponse(response);
 }

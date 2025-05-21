@@ -1,7 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { COOKIE, MESSAGES } from '../../helpers/string-const';
+import { COOKIE, ENVS, MESSAGES } from '../../helpers/string-const';
 import { Request } from 'express';
+import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -16,12 +17,38 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      // Verify the token with Supabase
-      const { data, error } = await this.supabaseService
-        .getClient()
-        .auth.getUser(token);
+      // Get Supabase URL and key from the service
+      const supabaseUrl = process.env[ENVS.SUPABASE_URL];
+      const supabaseKey = process.env[ENVS.SUPABASE_ANON_KEY];
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase environment variables');
+        throw new UnauthorizedException(MESSAGES.UNAUTHORIZED);
+      }
+
+      // Create a new client with the token in the headers
+      const supabase = createClient(
+        supabaseUrl,
+        supabaseKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false
+          },
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+
+      // Get the user data
+      const { data, error } = await supabase.auth.getUser();
 
       if (error || !data?.user) {
+        console.error('Auth error details:', error);
         throw new UnauthorizedException(MESSAGES.UNAUTHORIZED);
       }
 
@@ -29,6 +56,7 @@ export class AuthGuard implements CanActivate {
       request['user'] = data.user;
       return true;
     } catch (error) {
+      console.error('Auth error:', error);
       throw new UnauthorizedException(MESSAGES.UNAUTHORIZED);
     }
   }

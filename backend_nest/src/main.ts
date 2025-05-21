@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { ENVS } from './helpers/string-const';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +12,14 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   
   // Enable validation pipe
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ 
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true
+  }));
+  
+  // Apply global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
   
   // Cookie parser
   app.use(cookieParser());

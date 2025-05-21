@@ -5,14 +5,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Trash2, Plus, CheckCircle2, Edit, Loader2 } from "lucide-react"
+import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
 import type { Tasks, NewTask } from "@/types/supabase"
 import { createClient } from "@/utils/supabase/client"
 import { AuthRouteConstants, SupaBaseTableConstants, SupaBaseRoleConstants } from "@/helpers/string_const"
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation"
+import { toast } from "react-toastify"
+import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/utils/tasks"
+import { apiLogout } from "@/utils/auth"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export default function StudentDashboard() {
   const [todos, setTodos] = useState<Tasks[]>([])
@@ -20,10 +24,9 @@ export default function StudentDashboard() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
-  const router = useRouter();
-  console.log("::: StudentDashboard ::: ");
+  const router = useRouter()
+  const [useApi, setUseApi] = useState(false)
   
-
   // Loading states
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -34,10 +37,17 @@ export default function StudentDashboard() {
   const fetchTodos = async () => {
     try {
       setIsLoading(true)
-      const supabase = createClient();
-      const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
-      if (error) throw error;
-      setTodos(data);
+      if (useApi) {
+        // Use the API endpoint
+        const response = await fetchApiTasks();
+        setTodos(response.data || []);
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { data, error } = await supabase.from(SupaBaseTableConstants.TITLE).select("*");
+        if (error) throw error;
+        setTodos(data);
+      }
     } catch (error) {
       console.error("Error fetching todos:", error);
       toast.error("Failed to fetch todos. Please try again.");
@@ -60,7 +70,7 @@ export default function StudentDashboard() {
   
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [useApi]);
 
   useEffect(() => {
     fetchUser();
@@ -85,23 +95,38 @@ export default function StudentDashboard() {
     if (newTodo.trim() === "") return;
     try {
       setIsSubmitting(true)
-      const supabase = createClient();
-      if (editingTodoId) {
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-          tasks: newTodo
-        }).eq(SupaBaseTableConstants.ID, editingTodoId);
-
-        if (error) throw error;
-        setEditingTodoId(null);
-        toast.success("Todo updated successfully!");
+      
+      if (useApi) {
+        // Use the API endpoint
+        if (editingTodoId) {
+          await updateApiTask(editingTodoId, { tasks: newTodo });
+          setEditingTodoId(null);
+          toast.success("Todo updated successfully!");
+        } else {
+          await createApiTask(newTodo);
+          toast.success("Todo added successfully!");
+        }
       } else {
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
-          tasks: newTodo
-        }).single();
+        // Use Supabase direct access
+        const supabase = createClient();
+        if (editingTodoId) {
+          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
+            tasks: newTodo
+          }).eq(SupaBaseTableConstants.ID, editingTodoId);
 
-        if (error) throw error;
-        toast.success("Todo added successfully!");
+          if (error) throw error;
+          setEditingTodoId(null);
+          toast.success("Todo updated successfully!");
+        } else {
+          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).insert({
+            tasks: newTodo
+          }).single();
+
+          if (error) throw error;
+          toast.success("Todo added successfully!");
+        }
       }
+      
       await fetchTodos();
       setNewTodo("");
       if (inputRef.current) {
@@ -131,12 +156,22 @@ export default function StudentDashboard() {
     }
     try {
       setIsTogglingId(id)
-      const supabase = createClient();
-      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-        completed: !todos.find((todo) => todo.id === id)?.completed
-      }).eq(SupaBaseTableConstants.ID, id);
+      const currentTodo = todos.find((todo) => todo.id === id);
+      if (!currentTodo) return;
+      
+      if (useApi) {
+        // Use the API endpoint
+        await updateApiTask(id, { completed: !currentTodo.completed });
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
+          completed: !currentTodo.completed
+        }).eq(SupaBaseTableConstants.ID, id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      
       setTodos(
         todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
       )
@@ -156,10 +191,18 @@ export default function StudentDashboard() {
     }
     try {
       setIsDeletingId(id)
-      const supabase = createClient();
-      const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
+      
+      if (useApi) {
+        // Use the API endpoint
+        await deleteApiTask(id);
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.from(SupaBaseTableConstants.TITLE).delete().eq(SupaBaseTableConstants.ID, id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      
       setTodos(todos.filter((todo) => todo.id !== id))
       toast.success("Todo deleted successfully!");
     } catch (error) {
@@ -173,9 +216,17 @@ export default function StudentDashboard() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      if (useApi) {
+        // Use the API endpoint
+        await apiLogout();
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      }
+      
       router.push(AuthRouteConstants.LOGIN);
       toast.success("Logged out successfully!");
     } catch (error) {
@@ -203,6 +254,18 @@ export default function StudentDashboard() {
               Logged in as: {userRole}
             </p>
           )}
+          <div className="flex items-center space-x-2 justify-center mt-2">
+            <div className="flex items-center space-x-2">
+              <Database className={`h-4 w-4 ${!useApi ? "text-primary" : "text-muted-foreground"}`} />
+              <Switch 
+                id="api-toggle"
+                checked={useApi}
+                onCheckedChange={setUseApi}
+              />
+              <Server className={`h-4 w-4 ${useApi ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <Label htmlFor="api-toggle">{useApi ? "Using API" : "Using Supabase"}</Label>
+          </div>
         </CardHeader>
         <CardContent>
           {hasWritePermission() && (
@@ -237,6 +300,18 @@ export default function StudentDashboard() {
               </Button>
             </div>
           )}
+
+          <Button 
+            onClick={handleLogout} 
+            disabled={isLoggingOut}
+            className="mb-4 transition-all duration-200 hover:scale-105 w-full"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Logout"
+            )}
+          </Button>
 
           <AnimatePresence>
             {isLoading ? (

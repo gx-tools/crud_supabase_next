@@ -15,6 +15,12 @@ export enum MESSAGES {
   INVALID_CREDENTIALS = 'Invalid credentials',
   SIGNUP_SUCCESS = 'User registered successfully',
   LOGIN_SUCCESS = 'Login successful',
+  LOGOUT_SUCCESS = 'Logout successful',
+  TASK_CREATED = 'Task created successfully',
+  TASK_UPDATED = 'Task updated successfully',
+  TASK_DELETED = 'Task deleted successfully',
+  TASKS_RETRIEVED = 'Tasks retrieved successfully',
+  TASK_RETRIEVED = 'Task retrieved successfully',
 }
 
 export enum COOKIE {
@@ -26,4 +32,5 @@ export enum ROUTES {
   TASKS = 'tasks',
   LOGIN = 'login',
   SIGNUP = 'signup',
+  LOGOUT = 'logout',
 } 

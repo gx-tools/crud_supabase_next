@@ -1,13 +1,22 @@
 "use client"
 
-import { Toaster } from "sonner"
+import { useEffect } from "react"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 export function ToastProvider() {
   return (
-    <Toaster 
+    <ToastContainer
       position="top-right"
-      richColors
-      closeButton
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="colored"
     />
   )
 } 

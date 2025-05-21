@@ -8,15 +8,18 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { motion } from "framer-motion"
 import { AuthRouteConstants } from "@/helpers/string_const"
-import { signIn } from "@/utils/auth"
+import { signIn, apiSignIn } from "@/utils/auth"
 import { useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { Loader2, Server, Database } from "lucide-react"
+import { toast } from "react-toastify"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [useApi, setUseApi] = useState(false)
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,15 +31,36 @@ export default function Login() {
 
     try {
       setIsLoading(true)
-      const { data, error } = await signIn({ email, password })
       
-      if (error) {
-        toast.error(error.message || "Failed to login. Please check your credentials.")
-        return
-      }
+      if (useApi) {
+        // Use the NestJS API endpoint
+        console.log('Attempting API login...')
+        const response = await apiSignIn({ email, password })
+        console.log('API Response:', response)
+        
+        if (!response || response.error) {
+          toast.error(response?.error?.message || "Failed to login. Please check your credentials.")
+          return
+        }
+        
+        toast.success("Logged in successfully!")
+        console.log('Attempting to navigate to:', AuthRouteConstants.HOME)
+        router.replace(AuthRouteConstants.HOME)
+      } else {
+        // Use Supabase direct authentication
+        console.log('Attempting Supabase login...')
+        const { data, error } = await signIn({ email, password })
+        
+        if (error) {
+          toast.error(error.message || "Failed to login. Please check your credentials.")
+          return
+        }
 
-      toast.success("Logged in successfully!")
-      router.push(AuthRouteConstants.HOME)
+        toast.success("Logged in successfully!")
+        console.log('Attempting to navigate to:', AuthRouteConstants.HOME)
+        router.replace(AuthRouteConstants.HOME)
+      }
+      
     } catch (error) {
       console.error("Login error:", error)
       toast.error("An unexpected error occurred. Please try again.")
@@ -54,6 +78,18 @@ export default function Login() {
               <ThemeToggle />
             </div>
             <CardTitle className="text-2xl font-bold text-center text-primary">Login</CardTitle>
+            <div className="flex items-center space-x-2 justify-center mt-2">
+              <div className="flex items-center space-x-2">
+                <Database className={`h-4 w-4 ${!useApi ? "text-primary" : "text-muted-foreground"}`} />
+                <Switch 
+                  id="api-toggle"
+                  checked={useApi}
+                  onCheckedChange={setUseApi}
+                />
+                <Server className={`h-4 w-4 ${useApi ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <Label htmlFor="api-toggle" className="text-xs">{useApi ? "Using API" : "Using Supabase"}</Label>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

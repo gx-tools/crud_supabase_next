@@ -3,12 +3,13 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { MESSAGES, TABLES } from '../helpers/string-const';
+import { IApiResponse, successResponse } from '../helpers/response.helper';
 
 @Injectable()
 export class TasksService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async create(createTaskDto: CreateTaskDto, userId: string) {
+  async create(createTaskDto: CreateTaskDto, userId: string): Promise<IApiResponse> {
     try {
       const { data, error } = await this.supabaseService
         .getClient()
@@ -25,13 +26,13 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return data;
+      return successResponse(MESSAGES.TASK_CREATED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string): Promise<IApiResponse> {
     try {
       const { data, error } = await this.supabaseService
         .getClient()
@@ -44,13 +45,13 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return data;
+      return successResponse(MESSAGES.TASKS_RETRIEVED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string): Promise<IApiResponse> {
     try {
       const { data, error } = await this.supabaseService
         .getClient()
@@ -64,13 +65,13 @@ export class TasksService {
         throw new NotFoundException(MESSAGES.TASK_NOT_FOUND);
       }
 
-      return data;
+      return successResponse(MESSAGES.TASK_RETRIEVED, data);
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string) {
+  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string): Promise<IApiResponse> {
     try {
       // First check if task exists and belongs to user
       await this.findOne(id, userId);
@@ -88,13 +89,13 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return data;
+      return successResponse(MESSAGES.TASK_UPDATED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: string, userId: string): Promise<IApiResponse> {
     try {
       // First check if task exists and belongs to user
       await this.findOne(id, userId);
@@ -110,7 +111,7 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return { success: true };
+      return successResponse(MESSAGES.TASK_DELETED);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
