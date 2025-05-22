@@ -2,7 +2,7 @@ import axios from "axios";
 import { handleError } from "@/helpers/handlers";
 
 export const axiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3500",
+    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
     withCredentials: true,
     headers: {
         "Content-Type": "application/json",

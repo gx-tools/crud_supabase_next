@@ -53,3 +53,14 @@ export async function apiLogout() {
     throw error;
   }
 }
+
+export async function checkAuthStatus() {
+  try {
+    // Use the local Next.js API route that properly handles cookies
+    const response = await authApi.status();
+    return response;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
+}

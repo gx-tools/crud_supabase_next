@@ -100,6 +100,7 @@ npm run start:prod
 - `POST /api/auth/signup` - Register a new user
 - `POST /api/auth/login` - Login and get JWT cookie
 - `POST /api/auth/logout` - Logout and clear JWT cookie
+- `GET /api/auth/status` - Check if the user is currently authenticated (returns user data if logged in)
 
 ### Tasks (Protected by Auth)
 

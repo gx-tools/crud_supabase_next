@@ -1,11 +1,11 @@
 export enum AuthRouteConstants {
   LOGIN = "/auth/login",
   SIGNUP = "/auth/signup",
-  HOME = "/",
 }
 
 export enum RouteConstants {
-  STUDENT_DASHBOARD = "/student-dashboard",
+  COURSES = "/courses",
+  HOME = "/",
 }
 
 export enum SupaBaseTableConstants {
@@ -31,3 +31,6 @@ export enum SupaBaseQueryConstants {
   OR = "or",
 }
 
+export enum CookieConstants {
+  ACCESS_TOKEN = "access_token",
+}

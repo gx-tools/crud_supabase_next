@@ -16,6 +16,12 @@ export const authApi = {
   // Logout user
   logout: async () => {
     return await postRequest('/api/auth/logout', {});
+  },
+
+  // Check authentication status
+  status: async () => {
+    // Use local Next.js API route which properly forwards cookies
+    return await getRequest('/api/auth/status');
   }
 };
 

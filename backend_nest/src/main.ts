@@ -25,9 +25,16 @@ async function bootstrap() {
   app.use(cookieParser());
   
   // CORS
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const corsOrigin = isDevelopment 
+    ? ['http://localhost:3000', 'http://127.0.0.1:3000'] // Add your frontend dev URLs
+    : process.env.FRONTEND_URL; // Add this to your .env for production
+
   app.enableCors({
-    origin: true,
+    origin: corsOrigin,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   console.log(`SERVER PORT: ${process.env[ENVS.PORT]}`);

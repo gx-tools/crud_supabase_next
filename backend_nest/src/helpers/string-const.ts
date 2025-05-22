@@ -1,5 +1,6 @@
 export enum TABLES {
   TASKS = 'tasks',
+  USERS = 'users',
 }
 
 export enum ENVS {
@@ -16,6 +17,7 @@ export enum MESSAGES {
   SIGNUP_SUCCESS = 'User registered successfully',
   LOGIN_SUCCESS = 'Login successful',
   LOGOUT_SUCCESS = 'Logout successful',
+  AUTHENTICATED = 'User is authenticated',
   TASK_CREATED = 'Task created successfully',
   TASK_UPDATED = 'Task updated successfully',
   TASK_DELETED = 'Task deleted successfully',
@@ -33,4 +35,5 @@ export enum ROUTES {
   LOGIN = 'login',
   SIGNUP = 'signup',
   LOGOUT = 'logout',
+  STATUS = 'status',
 } 

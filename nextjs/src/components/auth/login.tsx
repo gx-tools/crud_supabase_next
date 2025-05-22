@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { motion } from "framer-motion"
-import { AuthRouteConstants } from "@/helpers/string_const"
+import { AuthRouteConstants, RouteConstants } from "@/helpers/string_const"
 import { signIn, apiSignIn } from "@/utils/auth"
 import { useRouter } from "next/navigation"
 import { Loader2, Server, Database } from "lucide-react"
@@ -44,8 +44,8 @@ export default function Login() {
         }
         
         toast.success("Logged in successfully!")
-        console.log('Attempting to navigate to:', AuthRouteConstants.HOME)
-        router.replace(AuthRouteConstants.HOME)
+        console.log('Attempting to navigate to:', RouteConstants.HOME)
+        router.replace(RouteConstants.HOME)
       } else {
         // Use Supabase direct authentication
         console.log('Attempting Supabase login...')
@@ -57,8 +57,8 @@ export default function Login() {
         }
 
         toast.success("Logged in successfully!")
-        console.log('Attempting to navigate to:', AuthRouteConstants.HOME)
-        router.replace(AuthRouteConstants.HOME)
+        console.log('Attempting to navigate to:', RouteConstants.HOME)
+        router.replace(RouteConstants.HOME)
       }
       
     } catch (error) {

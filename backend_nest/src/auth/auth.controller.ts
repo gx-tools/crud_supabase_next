@@ -1,9 +1,9 @@
-import { Body, Controller, Post, Res, InternalServerErrorException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Post, Res, InternalServerErrorException, HttpCode, HttpStatus, Get, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { COOKIE, ROUTES } from '../helpers/string-const';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { IApiResponse, successResponse } from '../helpers/response.helper';
 
 @Controller(ROUTES.AUTH)
@@ -23,12 +23,15 @@ export class AuthController {
       throw new InternalServerErrorException('Login failed: No session data returned');
     }
     
-    // Set JWT in HTTP-only cookie
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
+    // Set JWT in HTTP-only cookie with environment-specific settings
     res.cookie(COOKIE.ACCESS_TOKEN, response.data.session.access_token, {
       httpOnly: true,
-      secure: true, // Set to true in production
-      sameSite: 'strict',
+      secure: !isDevelopment, // Only use secure in production
+      sameSite: isDevelopment ? 'lax' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
     });
 
     res.json(successResponse(response.message));
@@ -38,11 +41,20 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Res() res: Response): Promise<void> {
     const response = await this.authService.logout();
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
     res.clearCookie(COOKIE.ACCESS_TOKEN, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? 'lax' : 'strict',
+      path: '/',
     });
     res.json(response);
+  }
+
+  @Get(ROUTES.STATUS)
+  async getAuthStatus(@Req() req: Request): Promise<IApiResponse> {
+    const token = req.cookies[COOKIE.ACCESS_TOKEN];
+    return this.authService.checkAuthStatus(token);
   }
 }

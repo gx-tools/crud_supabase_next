@@ -12,16 +12,13 @@ import { createClient } from "@/utils/supabase/client"
 import { AuthRouteConstants, RouteConstants, SupaBaseTableConstants } from "@/helpers/string_const"
 import { useRouter } from "next/navigation"
 import { toast } from "react-toastify"
-import Link from "next/link"
 import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/utils/tasks"
 import { apiLogout } from "@/utils/auth"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Task } from "@/types/supabase"
+import Navbar from "@/components/navbar"
 
-const courseLinks = [
-  { name: "Courses", path: RouteConstants.STUDENT_DASHBOARD },
-];
 
 export default function TodoApp() {
   const [todos, setTodos] = useState<Task[]>([])
@@ -37,6 +34,8 @@ export default function TodoApp() {
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null)
   const [isTogglingId, setIsTogglingId] = useState<number | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+   
 
   const fetchTodos = async () => {
     try {
@@ -206,17 +205,7 @@ export default function TodoApp() {
 
   return (
     <>
-      <nav className="bg-gray-800 p-4">
-        <ul className="flex space-x-4">
-          {courseLinks.map((link) => (
-            <li key={link.name}>
-              <Link href={link.path} className="text-white hover:underline">
-                {link.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <Navbar />
       <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-24 bg-background transition-colors duration-300">
         <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
           <CardHeader className="pb-3 relative">

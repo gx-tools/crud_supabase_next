@@ -3,7 +3,9 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { MESSAGES } from '../helpers/string-const';
-import { successResponse, IApiResponse } from '../helpers/response.helper';
+import { successResponse, IApiResponse, errorResponse } from '../helpers/response.helper';
+import { createClient } from '@supabase/supabase-js';
+import { ENVS } from '../helpers/string-const';
 
 @Injectable()
 export class AuthService {
@@ -52,6 +54,45 @@ export class AuthService {
       return successResponse(MESSAGES.LOGOUT_SUCCESS);
     } catch (error) {
       throw new InternalServerErrorException(error.message);
+    }
+  }
+  
+  async checkAuthStatus(token: string | undefined): Promise<IApiResponse> {
+    if (!token) {
+      return errorResponse(MESSAGES.UNAUTHORIZED);
+    }
+
+    try {
+      const supabaseUrl = process.env[ENVS.SUPABASE_URL];
+      const supabaseKey = process.env[ENVS.SUPABASE_ANON_KEY];
+
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase environment variables for auth check');
+        throw new InternalServerErrorException('Server configuration error');
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false
+        },
+        global: {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      });
+
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        return errorResponse(MESSAGES.UNAUTHORIZED);
+      }
+
+      return successResponse(MESSAGES.AUTHENTICATED, 
+        {email: user.email, id: user.id, role: user.user_metadata.role});
+    } catch (error) {
+      console.error('Auth status check error:', error);
+      throw new InternalServerErrorException('Error checking authentication status');
     }
   }
 }

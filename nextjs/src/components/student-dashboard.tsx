@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
-import type { Tasks, NewTask } from "@/types/supabase"
 import { createClient } from "@/utils/supabase/client"
 import { AuthRouteConstants, SupaBaseTableConstants, SupaBaseRoleConstants } from "@/helpers/string_const"
 import { useRouter } from "next/navigation"
@@ -17,9 +16,11 @@ import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/ut
 import { apiLogout } from "@/utils/auth"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Task } from "@/types/supabase"
+import Navbar from "@/components/navbar"
 
 export default function StudentDashboard() {
-  const [todos, setTodos] = useState<Tasks[]>([])
+  const [todos, setTodos] = useState<Task[]>([])
   const [newTodo, setNewTodo] = useState("")
   const [userRole, setUserRole] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -44,7 +45,7 @@ export default function StudentDashboard() {
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        const { data, error } = await supabase.from(SupaBaseTableConstants.TITLE).select("*");
+        const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
         if (error) throw error;
         setTodos(data);
       }
@@ -99,7 +100,7 @@ export default function StudentDashboard() {
       if (useApi) {
         // Use the API endpoint
         if (editingTodoId) {
-          await updateApiTask(editingTodoId, { tasks: newTodo });
+          await updateApiTask(editingTodoId, { title: newTodo });
           setEditingTodoId(null);
           toast.success("Todo updated successfully!");
         } else {
@@ -110,16 +111,16 @@ export default function StudentDashboard() {
         // Use Supabase direct access
         const supabase = createClient();
         if (editingTodoId) {
-          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
-            tasks: newTodo
+          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
+            title: newTodo
           }).eq(SupaBaseTableConstants.ID, editingTodoId);
 
           if (error) throw error;
           setEditingTodoId(null);
           toast.success("Todo updated successfully!");
         } else {
-          const { error } = await supabase.from(SupaBaseTableConstants.TITLE).insert({
-            tasks: newTodo
+          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
+            title: newTodo
           }).single();
 
           if (error) throw error;
@@ -140,12 +141,12 @@ export default function StudentDashboard() {
     }
   }
 
-  const handleEditTodo = (todo: Tasks) => {
+  const handleEditTodo = (todo: Task) => {
     if (!hasWritePermission()) {
       toast.error("You don't have permission to perform this action");
       return;
     }
-    setNewTodo(todo.tasks);
+    setNewTodo(todo.title);
     setEditingTodoId(todo.id);
   }
 
@@ -165,7 +166,7 @@ export default function StudentDashboard() {
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        const { error } = await supabase.from(SupaBaseTableConstants.TITLE).update({
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
           completed: !currentTodo.completed
         }).eq(SupaBaseTableConstants.ID, id);
 
@@ -198,7 +199,7 @@ export default function StudentDashboard() {
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        const { error } = await supabase.from(SupaBaseTableConstants.TITLE).delete().eq(SupaBaseTableConstants.ID, id);
+        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
 
         if (error) throw error;
       }
@@ -238,6 +239,8 @@ export default function StudentDashboard() {
   }
 
   return (
+    <>
+    <Navbar />
     <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-24 bg-background transition-colors duration-300">
       <h1 className="text-4xl font-bold mb-4">Testing</h1>
       <Card className="w-full max-w-md mx-auto shadow-lg border-muted transition-all duration-300">
@@ -356,7 +359,7 @@ export default function StudentDashboard() {
                             todo.completed ? "line-through text-muted-foreground" : "text-foreground"
                           }`}
                         >
-                          {todo.tasks}
+                          {todo.title}
                         </label>
                         {isTogglingId === todo.id && (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -406,5 +409,6 @@ export default function StudentDashboard() {
         </CardFooter>
       </Card>
     </main>
+    </>
   )
 }
