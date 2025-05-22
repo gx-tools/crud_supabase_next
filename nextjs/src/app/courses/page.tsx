@@ -1,12 +1,12 @@
 'use client';
 
-import StudentDashboard from "@/components/student-dashboard";
+import Courses from "@/components/courses";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function Page() {
   return (
     <ProtectedRoute>
-      <StudentDashboard />
+      <Courses />
     </ProtectedRoute>
   );
 }

@@ -38,7 +38,6 @@ export class TasksService {
         .getClient()
         .from(TABLES.TASKS)
         .select('*')
-        .eq('created_by', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -58,7 +57,6 @@ export class TasksService {
         .from(TABLES.TASKS)
         .select('*')
         .eq('id', id)
-        .eq('created_by', userId)
         .single();
 
       if (error || !data) {

@@ -23,6 +23,7 @@ export enum MESSAGES {
   TASK_DELETED = 'Task deleted successfully',
   TASKS_RETRIEVED = 'Tasks retrieved successfully',
   TASK_RETRIEVED = 'Task retrieved successfully',
+  USER_RETRIEVED = 'User retrieved successfully',
 }
 
 export enum COOKIE {
@@ -32,6 +33,7 @@ export enum COOKIE {
 export enum ROUTES {
   AUTH = 'auth',
   TASKS = 'tasks',
+  USERS = 'users',
   LOGIN = 'login',
   SIGNUP = 'signup',
   LOGOUT = 'logout',

@@ -44,8 +44,6 @@ export default function Login() {
         }
         
         toast.success("Logged in successfully!")
-        console.log('Attempting to navigate to:', RouteConstants.HOME)
-        router.replace(RouteConstants.HOME)
       } else {
         // Use Supabase direct authentication
         console.log('Attempting Supabase login...')
@@ -57,9 +55,9 @@ export default function Login() {
         }
 
         toast.success("Logged in successfully!")
-        console.log('Attempting to navigate to:', RouteConstants.HOME)
-        router.replace(RouteConstants.HOME)
       }
+      console.log('Attempting to navigate to:', RouteConstants.COURSES)
+      router.replace(RouteConstants.COURSES)
       
     } catch (error) {
       console.error("Login error:", error)

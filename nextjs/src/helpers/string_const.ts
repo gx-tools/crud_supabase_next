@@ -8,6 +8,13 @@ export enum RouteConstants {
   HOME = "/",
 }
 
+export enum ApiRouteConstants {
+  TASKS = "/api/tasks",
+  USERS = "/api/users",
+  AUTH_STATUS = "/api/auth/status",
+  AUTH_LOGOUT = "/api/auth/logout",
+}
+
 export enum SupaBaseTableConstants {
   TASKS = "tasks",
   ID = "id",

@@ -26,7 +26,7 @@ export default function TodoApp() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
   const router = useRouter()
-  const [useApi, setUseApi] = useState(false)
+  const [useApi, setUseApi] = useState(true)
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true)

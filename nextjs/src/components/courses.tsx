@@ -5,29 +5,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database } from "lucide-react"
+import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { createClient } from "@/utils/supabase/client"
-import { AuthRouteConstants, SupaBaseTableConstants, SupaBaseRoleConstants } from "@/helpers/string_const"
+import { AuthRouteConstants, SupaBaseTableConstants, SupaBaseRoleConstants, ApiRouteConstants } from "@/helpers/string_const"
 import { useRouter } from "next/navigation"
 import { toast } from "react-toastify"
-import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/utils/tasks"
-import { apiLogout } from "@/utils/auth"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Task } from "@/types/supabase"
 import Navbar from "@/components/navbar"
+import { getRequest, postRequest, putRequest, deleteRequest, handleError } from "@/helpers/handlers"
 
-export default function StudentDashboard() {
+export default function Courses() {
   const [todos, setTodos] = useState<Task[]>([])
   const [newTodo, setNewTodo] = useState("")
   const [userRole, setUserRole] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
   const router = useRouter()
-  const [useApi, setUseApi] = useState(false)
-  
+  const [useApi, setUseApi] = useState(true)
+  const [email, setEmail] = useState<string | null>(null)
   // Loading states
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -35,12 +34,14 @@ export default function StudentDashboard() {
   const [isTogglingId, setIsTogglingId] = useState<number | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
+  console.log("::: courses :::");
+
   const fetchTodos = async () => {
     try {
       setIsLoading(true)
       if (useApi) {
         // Use the API endpoint
-        const response = await fetchApiTasks();
+        const response = await getRequest(ApiRouteConstants.TASKS);
         setTodos(response.data || []);
       } else {
         // Use Supabase direct access
@@ -51,7 +52,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error("Error fetching todos:", error);
-      toast.error("Failed to fetch todos. Please try again.");
+      handleError(error);
     } finally {
       setIsLoading(false)
     }
@@ -59,13 +60,22 @@ export default function StudentDashboard() {
 
   const fetchUser = async () => {
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*").single();
-      if (error) throw error;
-      setUserRole(data?.role);
+      if (useApi) {
+        // Use the API endpoint
+        const response = await getRequest(ApiRouteConstants.USERS);
+        setUserRole(response.data?.role);
+        setEmail(response.data?.email);
+      } else {
+        // Use Supabase direct access
+        const supabase = createClient();
+        const { data, error } = await supabase.from(SupaBaseTableConstants.USERS).select("*").single();
+        if (error) throw error;
+        setUserRole(data?.role);
+        setEmail(data?.email);
+      }
     } catch (error) {
       console.error("Error fetching user:", error);
-      toast.error("Failed to fetch user data");
+      handleError(error);
     }
   }
   
@@ -98,13 +108,14 @@ export default function StudentDashboard() {
       setIsSubmitting(true)
       
       if (useApi) {
-        // Use the API endpoint
         if (editingTodoId) {
-          await updateApiTask(editingTodoId, { title: newTodo });
+          // Update existing task via API
+          await putRequest(`${ApiRouteConstants.TASKS}/${editingTodoId}`, { title: newTodo });
           setEditingTodoId(null);
           toast.success("Todo updated successfully!");
         } else {
-          await createApiTask(newTodo);
+          // Create new task via API
+          await postRequest(ApiRouteConstants.TASKS, { title: newTodo });
           toast.success("Todo added successfully!");
         }
       } else {
@@ -135,7 +146,7 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error("Error adding/editing todo:", error);
-      toast.error(editingTodoId ? "Failed to update todo" : "Failed to add todo");
+      handleError(error);
     } finally {
       setIsSubmitting(false)
     }
@@ -162,7 +173,7 @@ export default function StudentDashboard() {
       
       if (useApi) {
         // Use the API endpoint
-        await updateApiTask(id, { completed: !currentTodo.completed });
+        await putRequest(`${ApiRouteConstants.TASKS}/${id}`, { completed: !currentTodo.completed });
       } else {
         // Use Supabase direct access
         const supabase = createClient();
@@ -179,7 +190,7 @@ export default function StudentDashboard() {
       toast.success("Todo status updated!");
     } catch (error) {
       console.error("Error toggling todo:", error);
-      toast.error("Failed to update todo status");
+      handleError(error);
     } finally {
       setIsTogglingId(null)
     }
@@ -195,7 +206,7 @@ export default function StudentDashboard() {
       
       if (useApi) {
         // Use the API endpoint
-        await deleteApiTask(id);
+        await deleteRequest(`${ApiRouteConstants.TASKS}/${id}`);
       } else {
         // Use Supabase direct access
         const supabase = createClient();
@@ -208,7 +219,7 @@ export default function StudentDashboard() {
       toast.success("Todo deleted successfully!");
     } catch (error) {
       console.error("Error deleting todo:", error);
-      toast.error("Failed to delete todo");
+      handleError(error);
     } finally {
       setIsDeletingId(null)
     }
@@ -220,7 +231,7 @@ export default function StudentDashboard() {
       
       if (useApi) {
         // Use the API endpoint
-        await apiLogout();
+        await postRequest(ApiRouteConstants.AUTH_LOGOUT, {});
       } else {
         // Use Supabase direct access
         const supabase = createClient();
@@ -232,7 +243,7 @@ export default function StudentDashboard() {
       toast.success("Logged out successfully!");
     } catch (error) {
       console.error("Error logging out:", error);
-      toast.error("Failed to log out");
+      handleError(error);
     } finally {
       setIsLoggingOut(false)
     }
@@ -253,9 +264,14 @@ export default function StudentDashboard() {
             Todo App
           </CardTitle>
           {userRole && (
+          <>
             <p className="text-center text-sm text-muted-foreground">
               Logged in as: {userRole}
             </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Email: {email}
+            </p>
+            </>
           )}
           <div className="flex items-center space-x-2 justify-center mt-2">
             <div className="flex items-center space-x-2">
@@ -268,6 +284,16 @@ export default function StudentDashboard() {
               <Server className={`h-4 w-4 ${useApi ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <Label htmlFor="api-toggle">{useApi ? "Using API" : "Using Supabase"}</Label>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => fetchTodos()}
+              disabled={isLoading}
+              className="ml-2 hover:bg-primary/10 hover:text-primary transition-colors"
+              aria-label="Refresh todos"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
