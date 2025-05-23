@@ -5,20 +5,45 @@ import { ENVS } from '../helpers/string-const';
 @Injectable()
 export class SupabaseService implements OnModuleInit {
   private supabase: SupabaseClient;
+  private supabaseUrl: string | undefined;
+  private supabaseAnonKey: string | undefined;
 
   onModuleInit() {
-    const supabaseUrl = process.env[ENVS.SUPABASE_URL];
-    const supabaseAnonKey = process.env[ENVS.SUPABASE_ANON_KEY];
+    this.supabaseUrl = process.env[ENVS.SUPABASE_URL];
+    this.supabaseAnonKey = process.env[ENVS.SUPABASE_ANON_KEY];
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!this.supabaseUrl || !this.supabaseAnonKey) {
       console.error('Missing Supabase environment variables');
       return;
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey);
+    this.supabase = createClient(this.supabaseUrl, this.supabaseAnonKey);
   }
 
   getClient(): SupabaseClient {
     return this.supabase;
+  }
+
+  getAuthenticatedClient(accessToken: string): SupabaseClient {
+    if (!this.supabaseUrl || !this.supabaseAnonKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    return createClient(
+      this.supabaseUrl,
+      this.supabaseAnonKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      }
+    );
   }
 } 

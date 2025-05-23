@@ -8,27 +8,27 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { TasksService } from './tasks.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { User } from '../common/decorators/user.decorator';
 import { AccessToken } from '../common/decorators/access-token.decorator';
 import { ROUTES } from '../helpers/string-const';
 import { IApiResponse } from '../helpers/response.helper';
 
-@Controller(ROUTES.TASKS)
+@Controller(ROUTES.PROJECTS)
 @UseGuards(AuthGuard)
-export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+export class ProjectsController {
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
   async create(
-    @Body() createTaskDto: CreateTaskDto, 
+    @Body() createProjectDto: CreateProjectDto, 
     @User('id') userId: string,
     @AccessToken() accessToken: string
   ): Promise<IApiResponse> {
-    return this.tasksService.create(createTaskDto, userId, accessToken);
+    return this.projectsService.create(createProjectDto, userId, accessToken);
   }
 
   @Get()
@@ -36,7 +36,7 @@ export class TasksController {
     @User('id') userId: string,
     @AccessToken() accessToken: string
   ): Promise<IApiResponse> {
-    return this.tasksService.findAll(userId, accessToken);
+    return this.projectsService.findAll(userId, accessToken);
   }
 
   @Get(':id')
@@ -45,17 +45,17 @@ export class TasksController {
     @User('id') userId: string,
     @AccessToken() accessToken: string
   ): Promise<IApiResponse> {
-    return this.tasksService.findOne(id, userId, accessToken);
+    return this.projectsService.findOne(id, userId, accessToken);
   }
 
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateTaskDto: UpdateTaskDto,
+    @Body() updateProjectDto: UpdateProjectDto,
     @User('id') userId: string,
     @AccessToken() accessToken: string
   ): Promise<IApiResponse> {
-    return this.tasksService.update(id, updateTaskDto, userId, accessToken);
+    return this.projectsService.update(id, updateProjectDto, userId, accessToken);
   }
 
   @Delete(':id')
@@ -64,6 +64,6 @@ export class TasksController {
     @User('id') userId: string,
     @AccessToken() accessToken: string
   ): Promise<IApiResponse> {
-    return this.tasksService.remove(id, userId, accessToken);
+    return this.projectsService.remove(id, userId, accessToken);
   }
-}
+} 

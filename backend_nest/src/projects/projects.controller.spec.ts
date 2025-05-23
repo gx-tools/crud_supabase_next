@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TasksController } from './tasks.controller';
-import { TasksService } from './tasks.service';
+import { ProjectsController } from './projects.controller';
+import { ProjectsService } from './projects.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { SupabaseService } from '../supabase/supabase.service';
 
 // Mock the AuthGuard
 jest.mock('../common/guards/auth.guard');
 
-// Mock the TasksService
-const mockTasksService = {
+// Mock the ProjectsService
+const mockProjectsService = {
   create: jest.fn(),
   findAll: jest.fn(),
   findOne: jest.fn(),
@@ -22,14 +22,14 @@ const mockSupabaseService = {
   getAuthenticatedClient: jest.fn(),
 };
 
-describe('TasksController', () => {
-  let controller: TasksController;
+describe('ProjectsController', () => {
+  let controller: ProjectsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [TasksController],
+      controllers: [ProjectsController],
       providers: [
-        { provide: TasksService, useValue: mockTasksService },
+        { provide: ProjectsService, useValue: mockProjectsService },
         { provide: SupabaseService, useValue: mockSupabaseService },
       ],
     })
@@ -37,10 +37,10 @@ describe('TasksController', () => {
     .useValue({ canActivate: jest.fn().mockReturnValue(true) })
     .compile();
 
-    controller = module.get<TasksController>(TasksController);
+    controller = module.get<ProjectsController>(ProjectsController);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
-});
+}); 

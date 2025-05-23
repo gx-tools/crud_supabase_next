@@ -14,6 +14,7 @@ import { Loader2, Server, Database } from "lucide-react"
 import { toast } from "react-toastify"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/providers/AuthProvider"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -21,6 +22,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [useApi, setUseApi] = useState(false)
   const router = useRouter();
+  const { recheckAuth } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,6 +58,13 @@ export default function Login() {
 
         toast.success("Logged in successfully!")
       }
+      
+      // Trigger auth recheck to update AuthProvider state
+      await recheckAuth();
+      
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log('Attempting to navigate to:', RouteConstants.COURSES)
       router.replace(RouteConstants.COURSES)
       

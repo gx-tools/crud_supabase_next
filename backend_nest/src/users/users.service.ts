@@ -7,10 +7,11 @@ import { IApiResponse, successResponse } from '../helpers/response.helper';
 export class UsersService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async getUserInfo(userId: string): Promise<IApiResponse> {
+  async getUserInfo(userId: string, accessToken: string): Promise<IApiResponse> {
     try {
-      const { data, error } = await this.supabaseService
-        .getClient()
+      const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
+      
+      const { data, error } = await supabase
         .from(TABLES.USERS)
         .select('email, role')
         .eq('id', userId)

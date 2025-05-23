@@ -3,76 +3,64 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Trash2, Plus, CheckCircle2, Edit, Loader2, Server, Database } from "lucide-react"
+import { Trash2, Plus, FolderOpen, Edit, Loader2, Server, Database } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { createClient } from "@/utils/supabase/client"
 import { AuthRouteConstants, RouteConstants, SupaBaseTableConstants } from "@/helpers/string_const"
 import { useRouter } from "next/navigation"
 import { toast } from "react-toastify"
-import { fetchApiTasks, createApiTask, updateApiTask, deleteApiTask } from "@/utils/tasks"
+import { fetchApiProjects, createApiProject, updateApiProject, deleteApiProject } from "@/utils/projects"
 import { apiLogout } from "@/utils/auth"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Task } from "@/types/supabase"
+import { Project } from "@/types/supabase"
 import Navbar from "@/components/navbar"
-import { useAuth } from "@/providers/AuthProvider"
 
 
-export default function TodoApp() {
-  const [todos, setTodos] = useState<Task[]>([])
-  const [newTodo, setNewTodo] = useState("")
+export default function Projects() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [newProject, setNewProject] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
-  const [editingTodoId, setEditingTodoId] = useState<number | null>(null)
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const router = useRouter()
   const [useApi, setUseApi] = useState(true)
 
+  console.log("::: Projects ::: ");
+  
   // Loading states
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeletingId, setIsDeletingId] = useState<number | null>(null)
-  const [isTogglingId, setIsTogglingId] = useState<number | null>(null)
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+   
 
-  
-  useEffect(() => {
-    if (!isAuthLoading) {
-      if (isAuthenticated) {
-        router.push(RouteConstants.COURSES);
-      } else {
-        router.push(AuthRouteConstants.LOGIN);
-      }
-    }
-  }, [isAuthenticated, isAuthLoading, router]); 
-
-  const fetchTodos = async () => {
+  const fetchProjects = async () => {
     try {
       setIsLoading(true)
       if (useApi) {
         // Use the API endpoint
-        const response = await fetchApiTasks();
-        setTodos(response.data || []);
+        const response = await fetchApiProjects();
+        setProjects(response.data || []);
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        const { data, error } = await supabase.from(SupaBaseTableConstants.TASKS).select("*");
+        const { data, error } = await supabase.from(SupaBaseTableConstants.PROJECTS).select("*");
         if (error) throw error;
-        setTodos(data);
+        setProjects(data);
       }
     } catch (error) {
-      console.error("Error fetching todos:", error);
-      toast.error("Failed to fetch todos. Please try again.");
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to fetch projects. Please try again.");
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchTodos();
+    fetchProjects();
   }, [useApi]);
 
   // Focus input on mount
@@ -82,110 +70,79 @@ export default function TodoApp() {
     }
   }, [])
 
-  const addTodo = async () => {
-    if (newTodo.trim() === "") return;
+  const addProject = async () => {
+    if (newProject.trim() === "") return;
     try {
       setIsSubmitting(true)
       
       if (useApi) {
         // Use the API endpoint
-        if (editingTodoId) {
-          await updateApiTask(editingTodoId, { title: newTodo });
-          setEditingTodoId(null);
-          toast.success("Todo updated successfully!");
+        if (editingProjectId) {
+          await updateApiProject(editingProjectId, { title: newProject });
+          setEditingProjectId(null);
+          toast.success("Project updated successfully!");
         } else {
-          await createApiTask(newTodo);
-          toast.success("Todo added successfully!");
+          await createApiProject(newProject);
+          toast.success("Project added successfully!");
         }
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        if (editingTodoId) {
-          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-            tasks: newTodo
-          }).eq(SupaBaseTableConstants.ID, editingTodoId);
+        if (editingProjectId) {
+          const { error } = await supabase.from(SupaBaseTableConstants.PROJECTS).update({
+            title: newProject
+          }).eq(SupaBaseTableConstants.ID, editingProjectId);
 
           if (error) throw error;
-          setEditingTodoId(null);
-          toast.success("Todo updated successfully!");
+          setEditingProjectId(null);
+          toast.success("Project updated successfully!");
         } else {
-          const { error } = await supabase.from(SupaBaseTableConstants.TASKS).insert({
-            tasks: newTodo
+          const { error } = await supabase.from(SupaBaseTableConstants.PROJECTS).insert({
+            title: newProject
           }).single();
 
           if (error) throw error;
-          toast.success("Todo added successfully!");
+          toast.success("Project added successfully!");
         }
       }
       
-      await fetchTodos();
-      setNewTodo("");
+      await fetchProjects();
+      setNewProject("");
       if (inputRef.current) {
         inputRef.current.focus();
       }
     } catch (error) {
-      console.error("Error adding/editing todo:", error);
-      toast.error(editingTodoId ? "Failed to update todo" : "Failed to add todo");
+      console.error("Error adding/editing project:", error);
+      toast.error(editingProjectId ? "Failed to update project" : "Failed to add project");
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleEditTodo = (todo: Task) => {
-    setNewTodo(todo.title);
-    setEditingTodoId(todo.id);
+  const handleEditProject = (project: Project) => {
+    setNewProject(project.title);
+    setEditingProjectId(project.id);
   }
 
-  const toggleTodo = async (id: number) => {
-    try {
-      setIsTogglingId(id)
-      const currentTodo = todos.find((todo) => todo.id === id);
-      if (!currentTodo) return;
-      
-      if (useApi) {
-        // Use the API endpoint
-        await updateApiTask(id, { completed: !currentTodo.completed });
-      } else {
-        // Use Supabase direct access
-        const supabase = createClient();
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).update({
-          completed: !currentTodo.completed
-        }).eq(SupaBaseTableConstants.ID, id);
-
-        if (error) throw error;
-      }
-      
-      setTodos(
-        todos.map((todo) => (todo.id === id ? { ...todo, completed: !todo.completed } : todo))
-      )
-      toast.success("Todo status updated!");
-    } catch (error) {
-      console.error("Error toggling todo:", error);
-      toast.error("Failed to update todo status");
-    } finally {
-      setIsTogglingId(null)
-    }
-  }
-
-  const deleteTodo = async (id: number) => {
+  const deleteProject = async (id: string) => {
     try {
       setIsDeletingId(id)
       
       if (useApi) {
         // Use the API endpoint
-        await deleteApiTask(id);
+        await deleteApiProject(id);
       } else {
         // Use Supabase direct access
         const supabase = createClient();
-        const { error } = await supabase.from(SupaBaseTableConstants.TASKS).delete().eq(SupaBaseTableConstants.ID, id);
+        const { error } = await supabase.from(SupaBaseTableConstants.PROJECTS).delete().eq(SupaBaseTableConstants.ID, id);
         if (error) throw error;
       }
       
-      setTodos(todos.filter((todo) => todo.id !== id))
-      toast.success("Todo deleted successfully!");
+      setProjects(projects.filter((project) => project.id !== id))
+      toast.success("Project deleted successfully!");
     } catch (error) {
-      console.error("Error deleting todo:", error);
-      toast.error("Failed to delete todo");
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
     } finally {
       setIsDeletingId(null)
     }
@@ -225,8 +182,8 @@ export default function TodoApp() {
               <ThemeToggle />
             </div>
             <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-2 pt-2">
-              <CheckCircle2 className="h-7 w-7 text-primary" />
-              Todo App
+              <FolderOpen className="h-7 w-7 text-primary" />
+              Projects
             </CardTitle>
             <div className="flex items-center space-x-2 justify-center mt-2">
               <div className="flex items-center space-x-2">
@@ -246,19 +203,19 @@ export default function TodoApp() {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Add a new task..."
-                value={newTodo}
-                onChange={(e) => setNewTodo(e.target.value)}
+                placeholder="Add a new project..."
+                value={newProject}
+                onChange={(e) => setNewProject(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !isSubmitting) {
-                    addTodo()
+                    addProject()
                   }
                 }}
                 disabled={isSubmitting}
                 className="flex-1 transition-all duration-200 focus:ring-2 focus:ring-primary dark:bg-background dark:border-muted"
               />
               <Button 
-                onClick={addTodo} 
+                onClick={addProject} 
                 disabled={isSubmitting}
                 className="transition-all duration-200 hover:scale-105"
               >
@@ -266,7 +223,7 @@ export default function TodoApp() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    {editingTodoId ? "Edit" : "Add"}
+                    {editingProjectId ? "Edit" : "Add"}
                     <Plus className="h-5 w-5 ml-1" />
                   </>
                 )}
@@ -290,20 +247,20 @@ export default function TodoApp() {
                 <div className="flex justify-center items-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : todos.length === 0 ? (
+              ) : projects.length === 0 ? (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No todos yet. Add one above!
+                  No projects yet. Add one above!
                 </motion.p>
               ) : (
                 <div className="space-y-3">
                   <AnimatePresence>
-                    {todos.map((todo) => (
+                    {projects.map((project) => (
                       <motion.div
-                        key={todo.id}
+                        key={project.id}
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -100 }}
@@ -311,30 +268,16 @@ export default function TodoApp() {
                         className="flex items-center justify-between p-4 border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/30 group dark:bg-muted/10"
                       >
                         <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={todo.completed}
-                            onCheckedChange={() => toggleTodo(todo.id)}
-                            id={`todo-${todo.id}`}
-                            disabled={isTogglingId === todo.id}
-                            className="transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          />
-                          <label
-                            htmlFor={`todo-${todo.id}`}
-                            className={`transition-all duration-300 ${
-                              todo.completed ? "line-through text-muted-foreground" : "text-foreground"
-                            }`}
-                          >
-                            {todo.title}
-                          </label>
-                          {isTogglingId === todo.id && (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          )}
+                          <FolderOpen className="h-5 w-5 text-primary" />
+                          <span className="text-foreground font-medium">
+                            {project.title}
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleEditTodo(todo)}
+                            onClick={() => handleEditProject(project)}
                             disabled={isSubmitting}
-                            aria-label="Edit todo"
+                            aria-label="Edit project"
                             className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10 hover:text-primary"
                           >
                             <Edit className="h-4 w-4" />
@@ -343,12 +286,12 @@ export default function TodoApp() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteTodo(todo.id)}
-                          disabled={isDeletingId === todo.id}
-                          aria-label="Delete todo"
+                          onClick={() => deleteProject(project.id)}
+                          disabled={isDeletingId === project.id}
+                          aria-label="Delete project"
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
                         >
-                          {isDeletingId === todo.id ? (
+                          {isDeletingId === project.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -362,7 +305,7 @@ export default function TodoApp() {
             </AnimatePresence>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground pt-0 pb-4">
-            <p>Click the {todos.length > 0 ? "checkbox to mark as complete" : "plus button to add a todo"}</p>
+            <p>Click the {projects.length > 0 ? "edit icon to modify a project" : "plus button to add a project"}</p>
           </CardFooter>
         </Card>
       </main>

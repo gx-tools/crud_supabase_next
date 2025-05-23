@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { checkAuthStatus } from '@/utils/auth';
 import { AuthRouteConstants } from '@/helpers/string_const';
 
@@ -9,12 +9,14 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any | null;
+  recheckAuth: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   user: null,
+  recheckAuth: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -22,10 +24,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const verifyAuth = async () => {
+    try {
+      setIsLoading(true);
+      const response = await checkAuthStatus();
+      
+      if (response.success) {
+        setIsAuthenticated(true);
+        setUser(response.data);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+        // Only redirect to login if we're not already on an auth route
+        if (
+          pathname !== AuthRouteConstants.LOGIN &&
+          pathname !== AuthRouteConstants.SIGNUP &&
+          !pathname.startsWith('/api/auth')
+        ) {
+          router.push(AuthRouteConstants.LOGIN);
+        }
+      }
+    } catch (error) {
+      setIsAuthenticated(false);
+      setUser(null);
+      // Only redirect to login if we're not already on an auth route
+      if (
+        pathname !== AuthRouteConstants.LOGIN &&
+        pathname !== AuthRouteConstants.SIGNUP &&
+        !pathname.startsWith('/api/auth')
+      ) {
+        router.push(AuthRouteConstants.LOGIN);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const recheckAuth = async () => {
+    await verifyAuth();
+  };
 
   useEffect(() => {
     // Skip auth check for auth routes
-    const pathname = window.location.pathname;
     if (
       pathname === AuthRouteConstants.LOGIN ||
       pathname === AuthRouteConstants.SIGNUP ||
@@ -35,31 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const verifyAuth = async () => {
-      try {
-        // This will be a client-side request that includes cookies
-        const response = await checkAuthStatus();
-        
-        if (response.success) {
-          setIsAuthenticated(true);
-          setUser(response.data);
-        } else {
-          // Redirect to login if not authenticated
-          router.push(AuthRouteConstants.LOGIN);
-        }
-      } catch (error) {
-        // Redirect to login on error
-        router.push(AuthRouteConstants.LOGIN);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     verifyAuth();
-  }, [router]);
+  }, [pathname, router]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, recheckAuth }}>
       {children}
     </AuthContext.Provider>
   );

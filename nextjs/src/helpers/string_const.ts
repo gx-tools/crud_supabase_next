@@ -6,10 +6,12 @@ export enum AuthRouteConstants {
 export enum RouteConstants {
   COURSES = "/courses",
   HOME = "/",
+  PROJECTS = "/projects",
 }
 
 export enum ApiRouteConstants {
   TASKS = "/api/tasks",
+  PROJECTS = "/api/projects",
   USERS = "/api/users",
   AUTH_STATUS = "/api/auth/status",
   AUTH_LOGOUT = "/api/auth/logout",
@@ -17,7 +19,9 @@ export enum ApiRouteConstants {
 
 export enum SupaBaseTableConstants {
   TASKS = "tasks",
+  PROJECTS = "projects",
   ID = "id",
+  TITLE = "title",
   COMPLETED = "completed",
   CREATED_BY = "created_by",
   USERS = "users",

@@ -1,23 +1,23 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { MESSAGES, TABLES } from '../helpers/string-const';
 import { IApiResponse, successResponse } from '../helpers/response.helper';
 
 @Injectable()
-export class TasksService {
+export class ProjectsService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
-  async create(createTaskDto: CreateTaskDto, userId: string, accessToken: string): Promise<IApiResponse> {
+  async create(createProjectDto: CreateProjectDto, userId: string, accessToken: string): Promise<IApiResponse> {
     try {
       const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
       
       const { data, error } = await supabase
-        .from(TABLES.TASKS)
+        .from(TABLES.PROJECTS)
         .insert({
-          title: createTaskDto.title,
-          completed: createTaskDto.completed || false,
+          title: createProjectDto.title,
+          // created_by: userId,
         })
         .select()
         .single();
@@ -26,7 +26,7 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return successResponse(MESSAGES.TASK_CREATED, data);
+      return successResponse(MESSAGES.PROJECT_CREATED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -37,7 +37,7 @@ export class TasksService {
       const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
       
       const { data, error } = await supabase
-        .from(TABLES.TASKS)
+        .from(TABLES.PROJECTS)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -45,7 +45,7 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return successResponse(MESSAGES.TASKS_RETRIEVED, data);
+      return successResponse(MESSAGES.PROJECTS_RETRIEVED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -56,31 +56,31 @@ export class TasksService {
       const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
       
       const { data, error } = await supabase
-        .from(TABLES.TASKS)
+        .from(TABLES.PROJECTS)
         .select('*')
         .eq('id', id)
         .single();
 
       if (error || !data) {
-        throw new NotFoundException(MESSAGES.TASK_NOT_FOUND);
+        throw new NotFoundException(MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      return successResponse(MESSAGES.TASK_RETRIEVED, data);
+      return successResponse(MESSAGES.PROJECT_RETRIEVED, data);
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string, accessToken: string): Promise<IApiResponse> {
+  async update(id: string, updateProjectDto: UpdateProjectDto, userId: string, accessToken: string): Promise<IApiResponse> {
     try {
       const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
       
-      // First check if task exists and belongs to user
+      // First check if project exists and belongs to user
       await this.findOne(id, userId, accessToken);
 
       const { data, error } = await supabase
-        .from(TABLES.TASKS)
-        .update(updateTaskDto)
+        .from(TABLES.PROJECTS)
+        .update(updateProjectDto)
         .eq('id', id)
         .select()
         .single();
@@ -89,7 +89,7 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return successResponse(MESSAGES.TASK_UPDATED, data);
+      return successResponse(MESSAGES.PROJECT_UPDATED, data);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -99,11 +99,11 @@ export class TasksService {
     try {
       const supabase = this.supabaseService.getAuthenticatedClient(accessToken);
       
-      // First check if task exists and belongs to user
+      // First check if project exists and belongs to user
       await this.findOne(id, userId, accessToken);
 
       const { error } = await supabase
-        .from(TABLES.TASKS)
+        .from(TABLES.PROJECTS)
         .delete()
         .eq('id', id);
 
@@ -111,9 +111,9 @@ export class TasksService {
         throw new BadRequestException(error.message);
       }
 
-      return successResponse(MESSAGES.TASK_DELETED);
+      return successResponse(MESSAGES.PROJECT_DELETED);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
-}
+} 

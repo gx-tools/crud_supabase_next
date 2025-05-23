@@ -1,4 +1,4 @@
-import { getRequest, postRequest, putRequest, patchRequest } from '@/helpers/handlers';
+import { getRequest, postRequest, putRequest, patchRequest, deleteRequest } from '@/helpers/handlers';
 import { axiosInstance } from './fetcher';
 
 // Authentication API endpoints
@@ -49,8 +49,34 @@ export const tasksApi = {
 
   // Delete a task
   deleteTask: async (id: number) => {
-    // Using a custom delete since we don't have deleteRequest in handlers.ts
-    const response = await axiosInstance.delete(`/api/tasks/${id}`);
-    return response.data;
+    return await deleteRequest(`/api/tasks/${id}`);
+  }
+};
+
+// Projects API endpoints (Protected by Auth)
+export const projectsApi = {
+  // Get all projects for the authenticated user
+  getAllProjects: async () => {
+    return await getRequest('/api/projects');
+  },
+
+  // Create a new project
+  createProject: async (data: { title: string }) => {
+    return await postRequest('/api/projects', data);
+  },
+
+  // Get a specific project
+  getProjectById: async (id: string) => {
+    return await getRequest(`/api/projects/${id}`);
+  },
+
+  // Update a project
+  updateProject: async (id: string, data: { title: string }) => {
+    return await putRequest(`/api/projects/${id}`, data);
+  },
+
+  // Delete a project
+  deleteProject: async (id: string) => {
+    return await deleteRequest(`/api/projects/${id}`);
   }
 }; 
