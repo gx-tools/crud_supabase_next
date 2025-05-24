@@ -2,7 +2,6 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { SupabaseService } from '../../supabase/supabase.service';
 import { COOKIE, ENVS, MESSAGES } from '../../helpers/string-const';
 import { Request } from 'express';
-import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -27,22 +26,7 @@ export class AuthGuard implements CanActivate {
       }
 
       // Create a new client with the token in the headers
-      const supabase = createClient(
-        supabaseUrl,
-        supabaseKey,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-            detectSessionInUrl: false
-          },
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        }
-      );
+      const supabase = this.supabaseService.getAuthenticatedClient(token);
 
       // Get the user data
       const { data, error } = await supabase.auth.getUser();
