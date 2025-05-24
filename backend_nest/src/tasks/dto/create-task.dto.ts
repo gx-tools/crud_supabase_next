@@ -4,7 +4,10 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateTaskDto {
   @ApiProperty({
     example: 'Complete project documentation',
-    description: 'The title of the task'
+    description: 'The title of the task. Must be a non-empty string that clearly describes the task.',
+    required: true,
+    minLength: 1,
+    maxLength: 100
   })
   @IsString()
   @IsNotEmpty()
@@ -12,9 +15,10 @@ export class CreateTaskDto {
 
   @ApiProperty({
     example: false,
-    description: 'Whether the task is completed',
+    description: 'Boolean flag indicating whether the task is completed. Defaults to false if not provided.',
     required: false,
-    default: false
+    default: false,
+    type: Boolean
   })
   @IsBoolean()
   @IsOptional()

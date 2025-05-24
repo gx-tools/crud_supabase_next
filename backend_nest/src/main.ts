@@ -27,13 +27,44 @@ async function bootstrap() {
   
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('NestJS API')
-    .setDescription('The NestJS API documentation')
+    .setTitle('Task Management API')
+    .setDescription('RESTful API for managing tasks and projects with authentication')
     .setVersion('1.0')
+    .addTag('Authentication', 'Endpoints for user authentication and authorization')
+    .addTag('Tasks', 'Endpoints for managing user tasks')
+    .addTag('Projects', 'Endpoints for managing user projects')
+    .addTag('Users', 'Endpoints for managing user profile')
+    .setContact('Developer Team', 'https://example.com', 'dev@example.com')
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addBearerAuth()
+    .addCookieAuth('access_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'access_token'
+    })
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    
+  const document = SwaggerModule.createDocument(app, config, {
+    deepScanRoutes: true,
+    operationIdFactory: (
+      controllerKey: string,
+      methodKey: string
+    ) => methodKey
+  });
+  
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+      docExpansion: 'none',
+      filter: true,
+      showRequestDuration: true,
+      persistAuthorization: true,
+    },
+    customSiteTitle: 'Task Management API Documentation',
+    customCss: '.swagger-ui .topbar { display: none }',
+    customfavIcon: 'https://nestjs.com/img/logo_text.svg',
+  });
   
   // CORS
   const isDevelopment = process.env.NODE_ENV !== 'production';
