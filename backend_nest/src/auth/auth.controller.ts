@@ -75,13 +75,11 @@ export class AuthController {
       throw new InternalServerErrorException('Login failed: No session data returned');
     }
     
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    
     // Set JWT in HTTP-only cookie with environment-specific settings
     res.cookie(COOKIE.ACCESS_TOKEN, response.data.session.access_token, {
       httpOnly: true,
-      secure: !isDevelopment, // Only use secure in production
-      sameSite: isDevelopment ? 'lax' : 'strict',
+      secure: process.env.NODE_ENV === 'production', // Only use secure in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
@@ -100,12 +98,10 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Not logged in' })
   async logout(@Res() res: Response): Promise<void> {
     const response = await this.authService.logout();
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    
     res.clearCookie(COOKIE.ACCESS_TOKEN, {
       httpOnly: true,
-      secure: !isDevelopment,
-      sameSite: isDevelopment ? 'lax' : 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
     res.json(response);

@@ -18,23 +18,18 @@ export const ALLOWED_ORIGINS_DEV = [
  * Gets the appropriate CORS origin configuration based on the environment
  * @returns The origin configuration for CORS
  */
-export const getCorsOrigin = (): string | string[] => {
-  // const isDevelopment = process.env.NODE_ENV !== 'production';
+export const getCorsOrigin = (): string | boolean | string[] => {
+  const isDevelopment = process.env.NODE_ENV !== 'production';
   
-  // if (isDevelopment) {
-  //   return ALLOWED_ORIGINS_DEV;
-  // } 
+  if (isDevelopment) {
+    return ALLOWED_ORIGINS_DEV;
+  } 
   
-  // // For production, use comma-separated list from environment variable or default to empty array
-  // if (process.env.ALLOWED_ORIGINS) {
-  //   return process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
-  // }
+  // For production, use comma-separated list from environment variable
+  if (process.env.ALLOWED_ORIGINS) {
+    return process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+  }
   
   // Fallback to the main frontend URL if defined
-
-  if(!process.env.FRONTEND_URL) {
-    throw new Error('FRONTEND_URL is not defined');
-  }
-      
-  return process.env.FRONTEND_URL!;
+  return process.env.FRONTEND_URL ? process.env.FRONTEND_URL : true;
 }; 

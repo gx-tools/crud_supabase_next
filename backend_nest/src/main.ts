@@ -6,9 +6,13 @@ import { ENVS } from './helpers/string-const';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { getCorsOrigin } from './helpers/cors-config';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Trust proxy for secure cookies in production environments
+  app.set('trust proxy', 1);
   
   // Global prefix
   app.setGlobalPrefix('api');
