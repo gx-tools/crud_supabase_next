@@ -164,6 +164,26 @@ Required environment variables:
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_ANON_KEY` - Your Supabase anonymous key
 - `PORT` - Port for the server (defaults to 3500)
+- `ALLOWED_ORIGINS` - Comma-separated list of allowed frontend origins (for production)
+- `FRONTEND_URL` - Main frontend URL (fallback if ALLOWED_ORIGINS is not set)
+
+## CORS Configuration
+
+The application implements Cross-Origin Resource Sharing (CORS) with the following settings:
+
+- **Development Environment**: During development, the following origins are allowed by default:
+  - `http://localhost:3000`
+  - `http://127.0.0.1:3000`
+  - `http://localhost:5173` (Vite default)
+  - `http://127.0.0.1:5173`
+  - `http://localhost:8080`
+  - `http://127.0.0.1:8080`
+
+- **Production Environment**: In production, allowed origins are set using:
+  1. The `ALLOWED_ORIGINS` environment variable (comma-separated list) if provided
+  2. Or the `FRONTEND_URL` environment variable as a fallback
+
+You can customize the allowed origins by editing the `ALLOWED_ORIGINS_DEV` array in `src/helpers/cors-config.ts`.
 
 ## Setup and Installation
 

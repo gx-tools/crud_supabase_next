@@ -5,6 +5,7 @@ import * as cookieParser from 'cookie-parser';
 import { ENVS } from './helpers/string-const';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { getCorsOrigin } from './helpers/cors-config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -67,13 +68,8 @@ async function bootstrap() {
   });
   
   // CORS
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  const corsOrigin = isDevelopment 
-    ? ['http://localhost:3000', 'http://127.0.0.1:3000'] // Add your frontend dev URLs
-    : process.env.FRONTEND_URL; // Add this to your .env for production
-
   app.enableCors({
-    origin: corsOrigin,
+    origin: getCorsOrigin(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
