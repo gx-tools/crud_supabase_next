@@ -6,8 +6,11 @@ export class AppService {
   constructor(private readonly supabaseService: SupabaseService) {}
   
   getHello(): string {
-    console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
-    console.log('Supabase Client:', this.supabaseService.getClient() ? 'Initialized' : 'Not initialized');
-    return 'Hello World!';
+    
+    if(!process.env.FRONTEND_URL) {
+      throw new Error('FRONTEND_URL is not defined');
+    }
+    
+    return process.env.FRONTEND_URL!;
   }
 }
